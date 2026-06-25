@@ -1,0 +1,11 @@
+# Session tokens (sid/ecode/partner) — never commit
+session.json
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+
+# Built binaries
+bridge/avent-webrtc-bridge
+web/babymonitor-web
