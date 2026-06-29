@@ -42,6 +42,7 @@ func main() {
 	addr := flag.String("addr", envOr("BABYMON_ADDR", "127.0.0.1:8080"), "HTTP listen address")
 	ffmpegBin := flag.String("ffmpeg", envOr("BABYMON_FFMPEG", "ffmpeg"), "Path to ffmpeg")
 	flag.StringVar(&assetDir, "assets", envOr("BABYMON_ASSETS", ""), "Serve index.html/hls.min.js from this dir instead of embedded (dev)")
+	maxRetries := flag.Int("max-retries", 3, "Consecutive ffmpeg failures before exiting (feed gone)")
 	flag.Parse()
 
 	if *rtsp == "" {
@@ -57,7 +58,10 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
-	go superviseFFmpeg(ctx, *ffmpegBin, *rtsp, hlsDir)
+	go func() {
+		superviseFFmpeg(ctx, *ffmpegBin, *rtsp, hlsDir, *maxRetries)
+		stop() // feed lost (or already shutting down) -> bring the server down
+	}()
 
 	mux := http.NewServeMux()
 	mux.Handle("/hls/", http.StripPrefix("/hls/", noCache(http.FileServer(http.Dir(hlsDir)))))
@@ -89,15 +93,19 @@ func main() {
 	}
 }
 
-// superviseFFmpeg runs ffmpeg and restarts it if it exits (the camera stream
-// can drop), until the context is cancelled.
-func superviseFFmpeg(ctx context.Context, bin, rtsp, dir string) {
+// superviseFFmpeg runs ffmpeg and restarts it on exit to ride out brief
+// reconnects. If the feed stays down for maxFailures consecutive attempts it
+// returns, signalling the caller to shut the whole server down. A run that
+// stayed up a while is treated as healthy and resets the failure count.
+func superviseFFmpeg(ctx context.Context, bin, rtsp, dir string, maxFailures int) {
 	playlist := filepath.Join(dir, "stream.m3u8")
+	failures := 0
 	for ctx.Err() == nil {
 		args := []string{
 			"-nostdin", "-loglevel", "warning",
 			"-fflags", "nobuffer",
 			"-rtsp_transport", "tcp",
+			"-rw_timeout", "15000000", // 15s: detect a stalled/stopped feed
 			"-i", rtsp,
 			"-c:v", "copy",
 			"-c:a", "aac", "-b:a", "64k",
@@ -112,11 +120,20 @@ func superviseFFmpeg(ctx context.Context, bin, rtsp, dir string) {
 		cmd := exec.CommandContext(ctx, bin, args...)
 		cmd.Stderr = os.Stderr
 		log.Printf("starting ffmpeg")
+		started := time.Now()
 		err := cmd.Run()
 		if ctx.Err() != nil {
 			return
 		}
-		log.Printf("ffmpeg exited (%v); restarting in 2s", err)
+		if time.Since(started) > 30*time.Second {
+			failures = 0 // it was streaming fine before it dropped
+		}
+		failures++
+		if failures >= maxFailures {
+			log.Printf("ffmpeg exited (%v); feed unavailable after %d attempts — shutting down", err, failures)
+			return
+		}
+		log.Printf("ffmpeg exited (%v); retry %d/%d in 2s", err, failures, maxFailures)
 		select {
 		case <-ctx.Done():
 			return
