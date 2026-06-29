@@ -30,4 +30,6 @@ do {
     h.check(false, "Session Codable round-trip threw: \(error)")
 }
 
+runCryptoChecks(h)
+
 h.finish()
