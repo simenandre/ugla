@@ -18,6 +18,20 @@ final class AppState: ObservableObject {
         self.status = isConfigured ? "Ready" : "Not set up"
     }
 
+    /// Build the initial state from a previously saved session, if any.
+    static func bootstrap() -> AppState {
+        guard let session = SessionStore.load(), session.isValid else { return AppState() }
+        return AppState(isConfigured: true, cameras: session.cameras)
+    }
+
+    /// Forget the saved session (sign out).
+    func reset() {
+        SessionStore.clear()
+        isConfigured = false
+        cameras = []
+        status = "Not set up"
+    }
+
     /// Replace the camera list after a successful discovery.
     func setCameras(_ cameras: [Camera]) {
         // Discovery only runs once we are configured; a non-empty list here with
