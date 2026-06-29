@@ -9,3 +9,9 @@ __pycache__/
 # Built binaries
 bridge/avent-webrtc-bridge
 web/babymonitor-web
+/.tuya-data
+
+# Swift / macOS app build artifacts
+app/.build/
+app/build/
+DerivedData/
