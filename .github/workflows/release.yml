@@ -1,0 +1,104 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Build, sign & notarize
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo xcode-select -s /Applications/Xcode_16.2.app
+      - uses: actions/setup-go@v5
+        with: { go-version: "stable" }
+
+      - name: Build universal app
+        run: swift build -c release --arch arm64 --arch x86_64 --product BabyMonitor
+
+      - name: Build universal bridge
+        run: |
+          cd bridge
+          CGO_ENABLED=0 GOARCH=arm64 go build -o /tmp/bridge.arm64 .
+          CGO_ENABLED=0 GOARCH=amd64 go build -o /tmp/bridge.amd64 .
+          lipo -create -output /tmp/avent-webrtc-bridge /tmp/bridge.arm64 /tmp/bridge.amd64
+
+      # Provide a self-contained, universal static ffmpeg. The source is YOURS to
+      # choose and trust — set repo variables FFMPEG_ARM64_URL / FFMPEG_X86_URL
+      # and the matching FFMPEG_ARM64_SHA256 / FFMPEG_X86_SHA256 secrets.
+      - name: Fetch & verify ffmpeg
+        env:
+          ARM_URL: ${{ vars.FFMPEG_ARM64_URL }}
+          X86_URL: ${{ vars.FFMPEG_X86_URL }}
+          ARM_SHA: ${{ secrets.FFMPEG_ARM64_SHA256 }}
+          X86_SHA: ${{ secrets.FFMPEG_X86_SHA256 }}
+        run: |
+          fetch() { curl -fsSL "$1" -o "$2"; case "$2" in *.zip) ditto -x -k "$2" "$(dirname "$2")"; esac; }
+          fetch "$ARM_URL" /tmp/ff_arm.bin; [ -f /tmp/ffmpeg ] && mv /tmp/ffmpeg /tmp/ff_arm || mv /tmp/ff_arm.bin /tmp/ff_arm
+          echo "$ARM_SHA  /tmp/ff_arm" | shasum -a 256 -c -
+          fetch "$X86_URL" /tmp/ff_x86.bin; [ -f /tmp/ffmpeg ] && mv /tmp/ffmpeg /tmp/ff_x86 || mv /tmp/ff_x86.bin /tmp/ff_x86
+          echo "$X86_SHA  /tmp/ff_x86" | shasum -a 256 -c -
+          chmod +x /tmp/ff_arm /tmp/ff_x86
+          lipo -create -output /tmp/ffmpeg /tmp/ff_arm /tmp/ff_x86
+
+      - name: Assemble app bundle
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          APP="BabyMonitor.app"
+          mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources/Helpers"
+          cp "$(swift build -c release --arch arm64 --arch x86_64 --show-bin-path)/BabyMonitor" "$APP/Contents/MacOS/"
+          sed "s#0.1.0#$VERSION#" app/Resources/Info.plist > "$APP/Contents/Info.plist"
+          printf 'APPL????' > "$APP/Contents/PkgInfo"
+          cp /tmp/avent-webrtc-bridge /tmp/ffmpeg "$APP/Contents/Resources/Helpers/"
+          chmod +x "$APP/Contents/Resources/Helpers/"*
+          echo "APP=$APP" >> "$GITHUB_ENV"; echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+
+      - name: Install signing certificate
+        env:
+          P12_BASE64: ${{ secrets.DEVELOPER_ID_APPLICATION_P12 }}
+          P12_PASSWORD: ${{ secrets.DEVELOPER_ID_APPLICATION_P12_PASSWORD }}
+        run: |
+          KC="$RUNNER_TEMP/signing.keychain-db"; PW="$(openssl rand -base64 32)"
+          echo "$P12_BASE64" | base64 --decode > "$RUNNER_TEMP/cert.p12"
+          security create-keychain -p "$PW" "$KC"
+          security set-keychain-settings -lut 21600 "$KC"
+          security unlock-keychain -p "$PW" "$KC"
+          security import "$RUNNER_TEMP/cert.p12" -P "$P12_PASSWORD" -A -t cert -f pkcs12 -k "$KC"
+          security set-key-partition-list -S apple-tool:,apple: -k "$PW" "$KC"
+          security list-keychains -d user -s "$KC" login.keychain-db
+          ID=$(security find-identity -v -p codesigning "$KC" | head -1 | sed 's/.*"\(.*\)".*/\1/')
+          echo "SIGNING_IDENTITY=$ID" >> "$GITHUB_ENV"
+          rm -f "$RUNNER_TEMP/cert.p12"
+
+      - name: Codesign (Hardened Runtime; helpers then app)
+        run: |
+          for f in "$APP/Contents/Resources/Helpers/avent-webrtc-bridge" "$APP/Contents/Resources/Helpers/ffmpeg" "$APP"; do
+            codesign --force --options runtime --timestamp --sign "$SIGNING_IDENTITY" "$f"
+          done
+          codesign --verify --deep --strict --verbose=2 "$APP"
+
+      - name: Build DMG
+        run: |
+          mkdir dmg && cp -R "$APP" dmg/ && ln -s /Applications dmg/Applications
+          hdiutil create -volname "Baby Monitor" -srcfolder dmg -ov -format UDZO "BabyMonitor-$VERSION.dmg"
+
+      - name: Notarize & staple
+        env:
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_ID_PASSWORD: ${{ secrets.APPLE_ID_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          xcrun notarytool submit "BabyMonitor-$VERSION.dmg" --apple-id "$APPLE_ID" \
+            --password "$APPLE_ID_PASSWORD" --team-id "$APPLE_TEAM_ID" --wait
+          xcrun stapler staple "BabyMonitor-$VERSION.dmg"
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          name: "Baby Monitor ${{ env.VERSION }}"
+          files: BabyMonitor-${{ env.VERSION }}.dmg
+          prerelease: ${{ contains(github.ref_name, '-') }}
