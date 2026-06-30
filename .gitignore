@@ -1,18 +1,11 @@
-# Session tokens (sid/ecode/partner) — never commit
-session.json
-
-# Python
-.venv/
-__pycache__/
-*.pyc
-
-# Built binaries
-bridge/avent-webrtc-bridge
-web/babymonitor-web
-/.tuya-data
-
 # Swift / macOS app build artifacts
 app/.build/
 app/build/
-DerivedData/
 app/helpers/
+DerivedData/
+
+# Release output
+dist/
+
+# Bridge build output (if built in-tree)
+bridge/avent-webrtc-bridge

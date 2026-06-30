@@ -1,82 +1,77 @@
 # open-philip-babymonitor
 
-Watch a **Philips Avent Baby Monitor+** camera feed on your Mac in a browser.
+A native macOS **menu-bar app** for the **Philips Avent Baby Monitor+**. Click
+the menu-bar icon, pick a child, and watch the feed inline — or **pop it out**
+into a real macOS Picture-in-Picture window that floats on top while you work.
+Pinch to zoom, drag to pan; sound toggle; the zoom carries into PiP.
 
-The Baby Monitor+ app is a white-labeled **Tuya** product. The camera opens no
-local ports — there is no LAN RTSP stream to connect to. Video is delivered as
-**WebRTC, signaled over Tuya's MQTT cloud**, using the same Tuya Mobile SDK API
-the app uses. This project logs in with your account, bridges that WebRTC feed
-to a local RTSP stream, and serves it to your browser as HLS.
+The Baby Monitor+ app is a white-labeled **Tuya** product: the camera opens no
+local ports, and video is delivered as **WebRTC signaled over Tuya's MQTT
+cloud**. The app logs in with your account (email + one-time email code),
+bridges that WebRTC stream to a local RTSP feed, repackages it as HLS, and plays
+it with `AVPlayer` (which also gives native PiP).
 
 ```
-Philips/Tuya cloud ──WebRTC──▶ avent-webrtc-bridge ──RTSP──▶ babymonitor-web ──HLS──▶ browser
-   (login: login/auth.py)         (bridge/, Go)                  (web/, Go + ffmpeg)
+Philips/Tuya cloud ──WebRTC──▶ avent-webrtc-bridge ──RTSP──▶ ffmpeg ──HLS──▶ AVPlayer
+   (Swift Tuya client)            (bundled helper)        (bundled helper)   + native PiP
 ```
 
-## Credit
-
-The hard part — the Tuya signing, login/MFA and WebRTC→RTSP bridge — is the
-work of [`aventproxy`](https://github.com/thekoma/aventproxy) (MIT). This repo
-vendors its Go bridge and adds a standalone login helper, a browser viewer, and
-a one-command launcher so it runs on a Mac without Home Assistant. See
-[`NOTICE`](NOTICE).
-
-## Requirements
-
-- macOS with [Go](https://go.dev) 1.23+, Python 3.11+, and `ffmpeg` on PATH
-- Your Philips Baby Monitor+ account email + password (you'll get a one-time
-  6-digit code by email)
-
-## Setup
-
-```bash
-# 1. Python deps for the login step
-python3 -m venv .venv
-. .venv/bin/activate
-pip install -r login/requirements.txt
-
-# 2. Log in (interactive: password is hidden, MFA code arrives by email)
-cd login && python3 auth.py && cd ..
-```
-
-`auth.py` writes `session.json` (your session tokens + camera list). It is
-git-ignored and chmod 600 — **do not commit it**. Your password is never
-stored. Tokens expire; just re-run `auth.py` when streaming stops authenticating.
-
-## Run
-
-```bash
-./run.sh                 # first camera on the account
-./run.sh Erik            # pick a camera by name
-./run.sh 1               # ...or by index
-```
-
-This builds the binaries (first run only), starts the bridge, starts the web
-viewer, and opens <http://127.0.0.1:8080>. Click **Unmute** to hear audio
-(browsers start muted). Press Ctrl-C to stop.
-
-### Lowest latency: skip the browser
-
-HLS adds a few seconds of buffering. For near-real-time, play the bridge's RTSP
-directly. `run.sh` prints the RTSP URL on startup; then:
-
-```bash
-ffplay -fflags nobuffer -rtsp_transport tcp rtsp://localhost:8554/<CameraName>
-```
+Everything ships inside one signed `.app` — no Terminal, Python, or separately
+installed ffmpeg.
 
 ## Layout
 
 | Path | What |
 |------|------|
-| `login/` | Tuya login + camera discovery (Python) → `session.json` |
-| `bridge/` | Vendored `avent-webrtc-bridge` (Go): Tuya WebRTC → local RTSP |
-| `web/` | Browser viewer (Go): RTSP → HLS via ffmpeg, with vendored hls.js |
-| `run.sh` | Orchestrates bridge + viewer |
+| `app/` | The SwiftPM macOS app. `BabyMonitorCore` = logic (Tuya auth/discovery, crypto, process control); `BabyMonitor` = the SwiftUI menu-bar UI; `SelfTest` = CLT-friendly tests. |
+| `bridge/` | Vendored `avent-webrtc-bridge` (Go): Tuya WebRTC → local RTSP. Built and bundled into the app. |
+| `scripts/` | `build-helpers.sh`, `assemble-app.sh` (dev), `release.sh` + `setup-codesigning.sh` (release). |
+| `.github/workflows/release.yml` | Tag-triggered signed + notarized DMG build. |
+
+See `app/CODING_STANDARDS.md` for the design rules (Simple Made Easy + NASA
+Power-of-Ten + assertions). Credits in [`NOTICE`](NOTICE).
+
+## Build & run (development)
+
+Requires macOS 13+, Swift (Command Line Tools is enough), Go 1.23+, and an
+`ffmpeg` on `PATH` (dev only).
+
+```bash
+scripts/build-helpers.sh          # build the bridge + stage a dev ffmpeg
+scripts/assemble-app.sh debug     # build + assemble BabyMonitor.app (ad-hoc signed)
+open app/build/BabyMonitor.app
+```
+
+First launch: click the menu-bar camera icon → sign in with your Philips account
+(email + password; a 6-digit code is emailed) → pick a camera. The session is
+stored in the Keychain; your password is never stored.
+
+Tests: `swift run --package-path app SelfTest`.
+
+## Release (signed, notarized DMG)
+
+A frictionless drag-install DMG needs an Apple **Developer ID** and a
+self-contained **static** ffmpeg (the dev ffmpeg is dynamically linked and won't
+run on other Macs).
+
+1. One-time signing setup: `scripts/setup-codesigning.sh` (creates the
+   Developer ID cert and sets the GitHub Actions secrets), then set the
+   `FFMPEG_ARM64_URL` / `FFMPEG_X86_URL` repo variables and matching
+   `FFMPEG_*_SHA256` secrets to a static ffmpeg you trust.
+2. `git tag v1.0.0 && git push --tags` → CI builds a **universal**, signed,
+   notarized, stapled DMG and attaches it to a GitHub release.
+
+For a local Apple-Silicon build instead of CI:
+
+```bash
+SIGN_IDENTITY="Developer ID Application: … (TEAMID)" NOTARY_PROFILE="babymonitor" \
+FFMPEG_STATIC=/path/to/static-ffmpeg scripts/release.sh 1.0.0
+```
 
 ## Notes
 
-- **Supported models:** SCD643/971/973/923/951 are confirmed working upstream;
-  SCD921 is intermittent. Others may work (the API is generic).
-- **It's the real account session.** Traffic is indistinguishable from the app.
-  Keep `session.json` private.
-- This is unofficial and not affiliated with Philips or Tuya.
+- **Supported models:** SCD643/971/973/923/951 confirmed working; SCD921
+  intermittent. Others may work (the Tuya API is generic).
+- **Remote viewing:** streaming works best when your Mac and camera can reach
+  each other; some networks block the WebRTC path.
+- Unofficial — not affiliated with Philips or Tuya.

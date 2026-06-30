@@ -1,13 +1,13 @@
 open-philip-babymonitor
 
-This project builds on prior reverse-engineering work, all MIT-licensed:
+Builds on prior reverse-engineering work, all MIT-licensed:
 
 - aventproxy (https://github.com/thekoma/aventproxy)
-  Source of the Philips Avent / Tuya Mobile SDK reverse engineering: the
-  request signing algorithm, password + email-MFA login flow, MQTT credential
-  derivation, and the WebRTC->RTSP bridge. The bridge in `bridge/` is vendored
-  from this project (commit 9d1ae98). The Python client in `login/` is a
-  reimplementation of its documented API. See bridge/UPSTREAM_LICENSE.
+  Source of the Philips Avent / Tuya Mobile SDK reverse engineering: request
+  signing, password + email-MFA login, MQTT credential derivation, and the
+  WebRTC→RTSP bridge. The bridge in `bridge/` is vendored from this project
+  (commit 9d1ae98) and is bundled inside the app. The Swift Tuya client in
+  `app/Sources/BabyMonitorCore` reimplements its documented API.
 
 - tuya-ipc-terminal (https://github.com/seydx/tuya-ipc-terminal)
   The bridge that aventproxy forked from.
@@ -15,5 +15,9 @@ This project builds on prior reverse-engineering work, all MIT-licensed:
 - go2rtc (https://github.com/AlexxIT/go2rtc)
   WebRTC and codec utilities used by the bridge.
 
-- hls.js (https://github.com/video-dev/hls.js), v1.5.13, Apache-2.0
-  Vendored at web/hls.min.js for browser HLS playback.
+The app also bundles a static build of FFmpeg (https://ffmpeg.org), used to
+repackage the camera's RTSP into HLS. FFmpeg is licensed under the LGPL/GPL; the
+binary is bundled unmodified and invoked as a separate process. Provide the
+corresponding source per its license when distributing.
+
+Unofficial. Not affiliated with Philips or Tuya.
