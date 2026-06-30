@@ -32,35 +32,20 @@ struct PopoverView: View {
     }
 }
 
-/// Shown once a session exists: the list of cameras (children) plus controls.
-/// Tap a child to start its feed and pop it into a floating PiP window.
+/// Shown once a session exists. Either the camera list, or — once a feed is
+/// playing — an inline preview with a Pop out (PiP) control.
 struct ConfiguredView: View {
     @EnvironmentObject private var state: AppState
     @EnvironmentObject private var playback: Playback
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Baby Monitor").font(.headline)
-
-            if state.cameras.isEmpty {
-                Text("No cameras found.").foregroundStyle(.secondary)
+            if playback.isPiPActive {
+                pipActiveView
+            } else if playback.isActive {
+                watchingView
             } else {
-                ForEach(state.cameras) { camera in
-                    cameraRow(camera)
-                }
-            }
-
-            #if DEBUG
-            Button { playback.watchTestPattern() } label: {
-                Label("Test pattern", systemImage: "waveform")
-            }
-            .buttonStyle(.plain)
-            #endif
-
-            if playback.activeCamera != nil {
-                Divider()
-                Button { playback.popOut() } label: { Label("Pop out (PiP)", systemImage: "pip.enter") }
-                Button("Stop") { playback.stop() }
+                cameraListView
             }
 
             Divider()
@@ -73,20 +58,53 @@ struct ConfiguredView: View {
             }
         }
         .padding(14)
-        .frame(width: 260)
+        .frame(width: 280)
+        .onDisappear { playback.popoverClosed() }
     }
 
-    private func cameraRow(_ camera: Camera) -> some View {
-        Button { playback.watch(camera) } label: {
-            HStack {
-                Label(camera.name, systemImage: "video")
-                Spacer()
-                if playback.activeCamera == camera {
-                    Image(systemName: "dot.radiowaves.left.and.right").foregroundStyle(.red)
+    private var cameraListView: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Baby Monitor").font(.headline)
+            if state.cameras.isEmpty {
+                Text("No cameras found.").foregroundStyle(.secondary)
+            } else {
+                ForEach(state.cameras) { camera in
+                    Button { playback.watch(camera) } label: {
+                        Label(camera.name, systemImage: "video")
+                    }
+                    .buttonStyle(.plain)
                 }
             }
+            #if DEBUG
+            Button { playback.watchTestPattern() } label: {
+                Label("Test (Apple)", systemImage: "waveform")
+            }
+            .buttonStyle(.plain)
+            #endif
         }
-        .buttonStyle(.plain)
+    }
+
+    private var watchingView: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            InlinePlayerView(player: playback.player)
+                .frame(width: 252, height: 142)
+                .clipShape(RoundedRectangle(cornerRadius: 8))
+            HStack {
+                Button { playback.popOut() } label: { Label("Pop out", systemImage: "pip.enter") }
+                Spacer()
+                Button("Stop") { playback.stop() }
+            }
+        }
+    }
+
+    private var pipActiveView: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Label("Playing in Picture-in-Picture", systemImage: "pip")
+                .font(.subheadline)
+            Text("Close this menu — the feed keeps floating.")
+                .font(.caption).foregroundStyle(.secondary)
+            Button("Stop") { playback.stop() }
+        }
     }
 
     private var statusText: String {

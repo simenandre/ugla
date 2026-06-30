@@ -1,10 +1,9 @@
 import SwiftUI
 import BabyMonitorCore
 
-/// Owns live playback: turns a chosen camera into a running stream + PiP window.
-/// Separate from `AppState` (which holds account/UI state) so concerns stay
-/// unbraided. The view observes `state`; the work is delegated to the pipeline
-/// and the player.
+/// Owns live playback: turns a chosen camera into a running stream shown inline
+/// in the popover, with a "Pop out" that floats it as native PiP. Separate from
+/// `AppState` (account/UI state) so concerns stay unbraided.
 @MainActor
 final class Playback: ObservableObject {
     enum State: Equatable {
@@ -16,16 +15,22 @@ final class Playback: ObservableObject {
 
     @Published private(set) var state: State = .idle
 
-    private let player = PlayerController()
+    let player = PlayerController()
     private let coordinator = StreamCoordinator()
-    private let test = TestStream()
 
     var activeCamera: Camera? {
         if case .watching(let camera) = state { return camera }
+        if case .connecting = state { return nil }
         return nil
     }
 
-    /// Start watching a real camera, then auto-pop into PiP.
+    var isActive: Bool {
+        switch state { case .idle, .failed: return false; default: return true }
+    }
+
+    var isPiPActive: Bool { player.isPiPActive }
+
+    /// Start watching a real camera (plays inline in the popover).
     func watch(_ camera: Camera) {
         precondition(!camera.id.isEmpty, "camera id required")
         stop()
@@ -36,7 +41,7 @@ final class Playback: ObservableObject {
             }
             do {
                 let url = try await coordinator.start(session: session, camera: camera)
-                player.play(url: url, autoPiP: true)
+                player.play(url: url)
                 state = .watching(camera)
             } catch {
                 state = .failed(message(for: error))
@@ -44,24 +49,27 @@ final class Playback: ObservableObject {
         }
     }
 
-    /// Dev: play a known-good reference HLS stream to validate the player + PiP
-    /// path independently of our ffmpeg muxing.
+    /// Dev: play a known-good reference HLS to validate inline playback + PiP.
     func watchTestPattern() {
         stop()
-        state = .connecting("Test pattern")
+        state = .connecting("Test (Apple)")
         let url = URL(string: "https://devstreaming-cdn.apple.com/videos/streaming/examples/bipbop_4x3/bipbop_4x3_variant.m3u8")!
-        Diag.log("playing reference stream \(url.absoluteString)")
-        player.play(url: url, autoPiP: true)
+        player.play(url: url)
         state = .watching(Camera(id: "test", name: "Test (Apple)", category: ""))
     }
 
-    func popOut() { player.togglePiP() }
+    func popOut() { player.popOut() }
 
     func stop() {
         player.stop()
         coordinator.stop()
-        test.stop()
         state = .idle
+    }
+
+    /// Called when the popover closes: keep PiP running, otherwise tear down.
+    func popoverClosed() {
+        guard isActive else { return }
+        if !isPiPActive { stop() }
     }
 
     private func message(for error: Error) -> String {
