@@ -32,7 +32,9 @@ rm -f csr.conf
 echo "Created $CSR_FILE"
 echo
 echo "1. Open https://developer.apple.com/account/resources/certificates/add"
-echo "2. Choose 'Developer ID Application', upload $(pwd)/$CSR_FILE"
+echo "2. Under Software, choose 'Developer ID Application' — NOT 'Developer ID"
+echo "   Installer' (Installer signs .pkg files and will NOT work for the app)."
+echo "   Upload $(pwd)/$CSR_FILE"
 echo "3. Download the certificate here as $CERT_FILE"
 open "https://developer.apple.com/account/resources/certificates/add" || true
 read -rp "Press Enter once $CERT_FILE is downloaded here... "
@@ -40,6 +42,14 @@ read -rp "Press Enter once $CERT_FILE is downloaded here... "
 
 read -rsp "Choose a password for the .p12: " P12_PASSWORD; echo
 openssl x509 -inform DER -in "$CERT_FILE" -out cert.pem 2>/dev/null || cp "$CERT_FILE" cert.pem
+# Guard against the easy mistake of grabbing a 'Developer ID Installer' cert.
+SUBJECT="$(openssl x509 -in cert.pem -noout -subject 2>/dev/null || true)"
+if ! printf '%s' "$SUBJECT" | grep -q "Developer ID Application"; then
+  echo "Error: that is not a 'Developer ID Application' certificate."
+  echo "  subject: $SUBJECT"
+  echo "  Re-create it choosing 'Developer ID Application' and run this again."
+  rm -f cert.pem; exit 1
+fi
 # Bundle Apple's Developer ID intermediate so the .p12 carries the full chain
 # (otherwise codesign sees "0 valid identities" on a clean CI keychain).
 curl -fsSL https://www.apple.com/certificateauthority/DeveloperIDG2CA.cer -o DeveloperIDG2CA.cer
