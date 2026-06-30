@@ -3,7 +3,7 @@ name: Release
 on:
   push:
     tags:
-      - "v*"
+      - "v[0-9]*"
 
 permissions:
   contents: write
@@ -19,7 +19,7 @@ jobs:
         with: { go-version: "stable" }
 
       - name: Build universal app
-        run: swift build -c release --arch arm64 --arch x86_64 --product Ugla
+        run: swift build --package-path app -c release --arch arm64 --arch x86_64 --product Ugla
 
       - name: Build universal bridge
         run: |
@@ -46,7 +46,7 @@ jobs:
           VERSION="${GITHUB_REF_NAME#v}"
           APP="Ugla.app"
           mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources/Helpers"
-          cp "$(swift build -c release --arch arm64 --arch x86_64 --show-bin-path)/Ugla" "$APP/Contents/MacOS/"
+          cp "$(swift build --package-path app -c release --arch arm64 --arch x86_64 --show-bin-path)/Ugla" "$APP/Contents/MacOS/"
           sed "s#0.1.0#$VERSION#" app/Resources/Info.plist > "$APP/Contents/Info.plist"
           printf 'APPL????' > "$APP/Contents/PkgInfo"
           cp /tmp/avent-webrtc-bridge /tmp/ffmpeg "$APP/Contents/Resources/Helpers/"
