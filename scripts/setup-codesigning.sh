@@ -42,8 +42,12 @@ read -rp "Press Enter once $CERT_FILE is downloaded here... "
 
 read -rsp "Choose a password for the .p12: " P12_PASSWORD; echo
 openssl x509 -inform DER -in "$CERT_FILE" -out cert.pem 2>/dev/null || cp "$CERT_FILE" cert.pem
-openssl pkcs12 -export -out "$P12_FILE" -inkey bm-signing.key -in cert.pem -passout "pass:${P12_PASSWORD}"
-rm -f cert.pem bm-signing.key
+# Bundle Apple's Developer ID intermediate so the .p12 carries the full chain
+# (otherwise codesign sees "0 valid identities" on a clean CI keychain).
+curl -fsSL https://www.apple.com/certificateauthority/DeveloperIDG2CA.cer -o DeveloperIDG2CA.cer
+openssl x509 -inform DER -in DeveloperIDG2CA.cer -out intermediate.pem 2>/dev/null || cp DeveloperIDG2CA.cer intermediate.pem
+openssl pkcs12 -export -out "$P12_FILE" -inkey bm-signing.key -in cert.pem -certfile intermediate.pem -passout "pass:${P12_PASSWORD}"
+rm -f cert.pem bm-signing.key DeveloperIDG2CA.cer intermediate.pem
 
 read -rp "Apple Team ID: " TEAM_ID
 echo "Create an app-specific password at https://account.apple.com (Sign-In & Security)"

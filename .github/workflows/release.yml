@@ -64,9 +64,22 @@ jobs:
           security set-keychain-settings -lut 21600 "$KC"
           security unlock-keychain -p "$PW" "$KC"
           security import "$RUNNER_TEMP/cert.p12" -P "$P12_PASSWORD" -A -t cert -f pkcs12 -k "$KC"
+          # The exported p12 holds only the leaf + private key; import Apple's
+          # Developer ID intermediates so the cert chains to a trusted root and
+          # validates as a codesigning identity.
+          for ca in DeveloperIDG2CA DeveloperIDCA; do
+            curl -fsSL "https://www.apple.com/certificateauthority/$ca.cer" -o "$RUNNER_TEMP/$ca.cer" \
+              && security import "$RUNNER_TEMP/$ca.cer" -t cert -f x509 -k "$KC" || true
+          done
           security set-key-partition-list -S apple-tool:,apple: -k "$PW" "$KC"
           security list-keychains -d user -s "$KC" login.keychain-db
-          ID=$(security find-identity -v -p codesigning "$KC" | head -1 | sed 's/.*"\(.*\)".*/\1/')
+          ID=$(security find-identity -v -p codesigning "$KC" | grep -oE '"[^"]+"' | tr -d '"' | head -1)
+          if [ -z "$ID" ]; then
+            echo "::error::No valid Developer ID identity in keychain"
+            security find-identity -p codesigning "$KC" || true
+            exit 1
+          fi
+          echo "Signing identity: $ID"
           echo "SIGNING_IDENTITY=$ID" >> "$GITHUB_ENV"
           rm -f "$RUNNER_TEMP/cert.p12"
 
