@@ -9,10 +9,13 @@ struct BabyMonitorApp: App {
     @StateObject private var playback = Playback()
 
     var body: some Scene {
-        MenuBarExtra("Baby Monitor", systemImage: "video.fill") {
+        MenuBarExtra {
             PopoverView()
                 .environmentObject(state)
                 .environmentObject(playback)
+        } label: {
+            // Filled icon while a feed is live, outline when idle.
+            Image(systemName: playback.isActive ? "video.fill" : "video")
         }
         .menuBarExtraStyle(.window)
     }
