@@ -36,8 +36,8 @@ jobs:
         run: |
           gh release download vendor-ffmpeg --repo "$GITHUB_REPOSITORY" \
             -p ffmpeg-arm64 -p ffmpeg-amd64 -D /tmp/ff
-          echo "9a08d61f9328e8164ba560ee7a79958e357307fcfeea6fe626b7d66cdc287028  /tmp/ff/ffmpeg-arm64" | shasum -a 256 -c -
-          echo "60725ea0467ccaf900bf294d3567c302a802dc661f03bdde6aa7ecc9ccf05c4f  /tmp/ff/ffmpeg-amd64" | shasum -a 256 -c -
+          echo "ef4fe121377039053b0d7bed4a9aa46e7912918f5ba6424a1dd155f4eed625b0  /tmp/ff/ffmpeg-arm64" | shasum -a 256 -c -
+          echo "6a2c2884161d883fbb1ef21a0223475283eb4e381ee870956719f59f32daf74c  /tmp/ff/ffmpeg-amd64" | shasum -a 256 -c -
           chmod +x /tmp/ff/ffmpeg-arm64 /tmp/ff/ffmpeg-amd64
           lipo -create -output /tmp/ffmpeg /tmp/ff/ffmpeg-arm64 /tmp/ff/ffmpeg-amd64
 
