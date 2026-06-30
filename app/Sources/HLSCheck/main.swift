@@ -1,6 +1,6 @@
 import Foundation
 import AVFoundation
-import BabyMonitorCore
+import UglaCore
 
 // Dev tool: run ffmpeg test pattern with given HLS flags, serve via the local
 // HTTP server, and validate with a real AVPlayer.

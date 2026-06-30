@@ -1,4 +1,4 @@
-open-philip-babymonitor
+Ugla — an unofficial macOS menu-bar client for the Philips Avent Baby Monitor+
 
 Builds on prior reverse-engineering work, all MIT-licensed:
 
@@ -7,7 +7,7 @@ Builds on prior reverse-engineering work, all MIT-licensed:
   signing, password + email-MFA login, MQTT credential derivation, and the
   WebRTC→RTSP bridge. The bridge in `bridge/` is vendored from this project
   (commit 9d1ae98) and is bundled inside the app. The Swift Tuya client in
-  `app/Sources/BabyMonitorCore` reimplements its documented API.
+  `app/Sources/UglaCore` reimplements its documented API.
 
 - tuya-ipc-terminal (https://github.com/seydx/tuya-ipc-terminal)
   The bridge that aventproxy forked from.

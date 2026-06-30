@@ -15,3 +15,10 @@ bridge/avent-webrtc-bridge
 *.p12
 *.certSigningRequest
 *.key
+
+# Local account/session data (never commit)
+.tuya-data/
+
+# Python
+__pycache__/
+*.pyc

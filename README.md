@@ -1,6 +1,7 @@
-# open-philip-babymonitor
+# Ugla
 
-A native macOS **menu-bar app** for the **Philips Avent Baby Monitor+**. Click
+**Ugla** (Norwegian for "the owl" 🦉) is an unofficial native macOS **menu-bar
+app** for the **Philips Avent Baby Monitor+**. Click
 the menu-bar icon, pick a child, and watch the feed inline — or **pop it out**
 into a real macOS Picture-in-Picture window that floats on top while you work.
 Pinch to zoom, drag to pan; sound toggle; the zoom carries into PiP.
@@ -23,7 +24,7 @@ installed ffmpeg.
 
 | Path | What |
 |------|------|
-| `app/` | The SwiftPM macOS app. `BabyMonitorCore` = logic (Tuya auth/discovery, crypto, process control); `BabyMonitor` = the SwiftUI menu-bar UI; `SelfTest` = CLT-friendly tests. |
+| `app/` | The SwiftPM macOS app. `UglaCore` = logic (Tuya auth/discovery, crypto, process control); `Ugla` = the SwiftUI menu-bar UI; `SelfTest` = CLT-friendly tests. |
 | `bridge/` | Vendored `avent-webrtc-bridge` (Go): Tuya WebRTC → local RTSP. Built and bundled into the app. |
 | `scripts/` | `build-helpers.sh`, `assemble-app.sh` (dev), `release.sh` + `setup-codesigning.sh` (release). |
 | `.github/workflows/release.yml` | Tag-triggered signed + notarized DMG build. |
@@ -38,8 +39,8 @@ Requires macOS 13+, Swift (Command Line Tools is enough), Go 1.23+, and an
 
 ```bash
 scripts/build-helpers.sh          # build the bridge + stage a dev ffmpeg
-scripts/assemble-app.sh debug     # build + assemble BabyMonitor.app (ad-hoc signed)
-open app/build/BabyMonitor.app
+scripts/assemble-app.sh debug     # build + assemble Ugla.app (ad-hoc signed)
+open app/build/Ugla.app
 ```
 
 First launch: click the menu-bar camera icon → sign in with your Philips account
@@ -66,7 +67,7 @@ run on other Macs).
 For a local Apple-Silicon build instead of CI:
 
 ```bash
-SIGN_IDENTITY="Developer ID Application: … (TEAMID)" NOTARY_PROFILE="babymonitor" \
+SIGN_IDENTITY="Developer ID Application: … (TEAMID)" NOTARY_PROFILE="ugla" \
 FFMPEG_STATIC=/path/to/static-ffmpeg scripts/release.sh 1.0.0
 ```
 

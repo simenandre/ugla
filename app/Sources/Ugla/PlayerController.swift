@@ -1,7 +1,7 @@
 import AppKit
 import AVFoundation
 import AVKit
-import BabyMonitorCore
+import UglaCore
 
 /// Plays an HLS URL into an `AVPlayerLayer` that is hosted inline (in the
 /// popover) and can pop out into a native Picture-in-Picture window. Hosting the

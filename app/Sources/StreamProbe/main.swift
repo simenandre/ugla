@@ -1,5 +1,5 @@
 import Foundation
-import BabyMonitorCore
+import UglaCore
 
 // Dev verification: start the full pipeline for the saved session's first camera
 // (or a camera named by argv[1]) and print the HLS URL, then keep running so it

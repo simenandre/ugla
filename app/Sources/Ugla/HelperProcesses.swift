@@ -1,10 +1,10 @@
 import Foundation
-import BabyMonitorCore
+import UglaCore
 
 /// Terminates the bundled helper processes (bridge, ffmpeg) so they are never
 /// orphaned: leftovers from a previous crash are cleared at launch, and our own
 /// children are killed on quit. Matched by our Helpers directory path, so this
-/// only ever targets our binaries. Driven from `BabyMonitorApp.init`.
+/// only ever targets our binaries. Driven from `UglaApp.init`.
 enum HelperProcesses {
     static func killAll() {
         guard let dir = HelperLocator.url(for: .bridge)?

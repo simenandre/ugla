@@ -19,7 +19,7 @@ jobs:
         with: { go-version: "stable" }
 
       - name: Build universal app
-        run: swift build -c release --arch arm64 --arch x86_64 --product BabyMonitor
+        run: swift build -c release --arch arm64 --arch x86_64 --product Ugla
 
       - name: Build universal bridge
         run: |
@@ -44,9 +44,9 @@ jobs:
       - name: Assemble app bundle
         run: |
           VERSION="${GITHUB_REF_NAME#v}"
-          APP="BabyMonitor.app"
+          APP="Ugla.app"
           mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources/Helpers"
-          cp "$(swift build -c release --arch arm64 --arch x86_64 --show-bin-path)/BabyMonitor" "$APP/Contents/MacOS/"
+          cp "$(swift build -c release --arch arm64 --arch x86_64 --show-bin-path)/Ugla" "$APP/Contents/MacOS/"
           sed "s#0.1.0#$VERSION#" app/Resources/Info.plist > "$APP/Contents/Info.plist"
           printf 'APPL????' > "$APP/Contents/PkgInfo"
           cp /tmp/avent-webrtc-bridge /tmp/ffmpeg "$APP/Contents/Resources/Helpers/"
@@ -80,7 +80,7 @@ jobs:
       - name: Build DMG
         run: |
           mkdir dmg && cp -R "$APP" dmg/ && ln -s /Applications dmg/Applications
-          hdiutil create -volname "Baby Monitor" -srcfolder dmg -ov -format UDZO "BabyMonitor-$VERSION.dmg"
+          hdiutil create -volname "Ugla" -srcfolder dmg -ov -format UDZO "Ugla-$VERSION.dmg"
 
       - name: Notarize & staple
         env:
@@ -88,12 +88,12 @@ jobs:
           APPLE_ID_PASSWORD: ${{ secrets.APPLE_ID_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: |
-          xcrun notarytool submit "BabyMonitor-$VERSION.dmg" --apple-id "$APPLE_ID" \
+          xcrun notarytool submit "Ugla-$VERSION.dmg" --apple-id "$APPLE_ID" \
             --password "$APPLE_ID_PASSWORD" --team-id "$APPLE_TEAM_ID" --wait
-          xcrun stapler staple "BabyMonitor-$VERSION.dmg"
+          xcrun stapler staple "Ugla-$VERSION.dmg"
 
       - uses: softprops/action-gh-release@v2
         with:
-          name: "Baby Monitor ${{ env.VERSION }}"
-          files: BabyMonitor-${{ env.VERSION }}.dmg
+          name: "Ugla ${{ env.VERSION }}"
+          files: Ugla-${{ env.VERSION }}.dmg
           prerelease: ${{ contains(github.ref_name, '-') }}

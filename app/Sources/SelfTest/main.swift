@@ -1,7 +1,7 @@
 import Foundation
-import BabyMonitorCore
+import UglaCore
 
-// Self-tests for BabyMonitorCore. Run with: swift run SelfTest
+// Self-tests for UglaCore. Run with: swift run SelfTest
 // More checks (TuyaCrypto vectors, discovery parsing) are added per phase.
 
 let h = Harness()

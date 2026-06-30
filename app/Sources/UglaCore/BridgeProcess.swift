@@ -68,7 +68,7 @@ public final class BridgeProcess {
         let base = (try? fm.url(for: .applicationSupportDirectory, in: .userDomainMask,
                                 appropriateFor: nil, create: true))
             ?? fm.temporaryDirectory
-        let dir = base.appendingPathComponent("BabyMonitor/bridge", isDirectory: true)
+        let dir = base.appendingPathComponent("Ugla/bridge", isDirectory: true)
         try? fm.createDirectory(at: dir, withIntermediateDirectories: true)
         return dir
     }

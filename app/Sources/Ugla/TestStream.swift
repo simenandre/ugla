@@ -1,5 +1,5 @@
 import Foundation
-import BabyMonitorCore
+import UglaCore
 
 /// Dev-only: generates a synthetic HLS stream (test pattern + tone) with the
 /// bundled ffmpeg, served over the local HTTP server. Lets us validate the

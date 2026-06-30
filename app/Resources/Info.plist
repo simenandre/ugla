@@ -3,13 +3,13 @@
 <plist version="1.0">
 <dict>
 	<key>CFBundleName</key>
-	<string>Baby Monitor</string>
+	<string>Ugla</string>
 	<key>CFBundleDisplayName</key>
-	<string>Baby Monitor</string>
+	<string>Ugla</string>
 	<key>CFBundleIdentifier</key>
-	<string>com.simenandre.babymonitor</string>
+	<string>com.simenandre.ugla</string>
 	<key>CFBundleExecutable</key>
-	<string>BabyMonitor</string>
+	<string>Ugla</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>

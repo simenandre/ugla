@@ -1,9 +1,9 @@
 import SwiftUI
-import BabyMonitorCore
+import UglaCore
 
 /// Drives the first-run login: password → email MFA code → discover cameras →
 /// persist session. Owns a TuyaClient for the duration of the flow. UI state is
-/// the `phase`; the actual networking lives in `BabyMonitorCore`.
+/// the `phase`; the actual networking lives in `UglaCore`.
 @MainActor
 final class SetupModel: ObservableObject {
     enum Phase: Equatable { case credentials, code, working, done, failed(String) }

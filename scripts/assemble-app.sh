@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Build the SwiftPM executable and assemble a runnable BabyMonitor.app bundle.
+# Build the SwiftPM executable and assemble a runnable Ugla.app bundle.
 # Phase 0: app binary + Info.plist only. Bundled helpers (bridge, ffmpeg) and
 # Developer ID signing are added in later phases (build-helpers.sh / release.sh).
 #
@@ -9,17 +9,17 @@ set -euo pipefail
 CONFIG="${1:-debug}"
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 APPDIR="$ROOT/app"
-OUT="$APPDIR/build/BabyMonitor.app"
+OUT="$APPDIR/build/Ugla.app"
 
 echo "Building ($CONFIG)..."
-swift build --package-path "$APPDIR" -c "$CONFIG" --product BabyMonitor
-BIN="$(swift build --package-path "$APPDIR" -c "$CONFIG" --show-bin-path)/BabyMonitor"
+swift build --package-path "$APPDIR" -c "$CONFIG" --product Ugla
+BIN="$(swift build --package-path "$APPDIR" -c "$CONFIG" --show-bin-path)/Ugla"
 [ -x "$BIN" ] || { echo "error: built binary not found at $BIN" >&2; exit 1; }
 
 echo "Assembling $OUT ..."
 rm -rf "$OUT"
 mkdir -p "$OUT/Contents/MacOS" "$OUT/Contents/Resources/Helpers"
-cp "$BIN" "$OUT/Contents/MacOS/BabyMonitor"
+cp "$BIN" "$OUT/Contents/MacOS/Ugla"
 cp "$APPDIR/Resources/Info.plist" "$OUT/Contents/Info.plist"
 printf 'APPL????' > "$OUT/Contents/PkgInfo"
 

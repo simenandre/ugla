@@ -1,5 +1,5 @@
 import Foundation
-import BabyMonitorCore
+import UglaCore
 
 // Vectors generated from the proven Python impl (login/tuya_client.py) and from
 // OpenSSL. If the Swift port drifts from the Python signing, these fail.

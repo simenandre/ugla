@@ -1,5 +1,5 @@
 import SwiftUI
-import BabyMonitorCore
+import UglaCore
 
 /// The app's observable UI state. Single source of truth for what the menubar
 /// view renders. Holds values only; behaviour lives in dedicated types.

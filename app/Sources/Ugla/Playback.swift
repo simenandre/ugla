@@ -1,5 +1,5 @@
 import SwiftUI
-import BabyMonitorCore
+import UglaCore
 
 /// Owns live playback: turns a chosen camera into a running stream shown inline
 /// in the popover, with a "Pop out" that floats it as native PiP. Separate from

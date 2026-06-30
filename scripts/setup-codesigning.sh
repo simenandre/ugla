@@ -11,11 +11,11 @@
 set -euo pipefail
 
 REPO="simenandre/open-philip-babymonitor"
-CSR_FILE="BabyMonitorDeveloperID.certSigningRequest"
+CSR_FILE="UglaDeveloperID.certSigningRequest"
 CERT_FILE="developerID_application.cer"
 P12_FILE="DeveloperID.p12"
 
-echo "=== Baby Monitor code signing setup ==="
+echo "=== Ugla code signing setup ==="
 read -rp "Apple Developer email: " APPLE_EMAIL
 
 cat > csr.conf <<EOF

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Stage the bundled helper binaries the app drives at runtime, into app/helpers/.
-# assemble-app.sh copies these into BabyMonitor.app/Contents/Resources/Helpers.
+# assemble-app.sh copies these into Ugla.app/Contents/Resources/Helpers.
 #
 #   scripts/build-helpers.sh [--universal]
 #

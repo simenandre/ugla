@@ -1,6 +1,6 @@
 import AppKit
 import AVKit
-import BabyMonitorCore
+import UglaCore
 
 /// Hosts the shared `AVPlayerLayer` and adds digital zoom: scroll or pinch to
 /// zoom, drag to pan, double-click to reset. Zoom scales the layer within the

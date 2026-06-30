@@ -1,10 +1,10 @@
 import SwiftUI
-import BabyMonitorCore
+import UglaCore
 
 /// Entry point. A menubar-only app (LSUIElement in Info.plist → no Dock icon).
 /// Clicking the menubar icon opens a window-style popover listing the cameras.
 @main
-struct BabyMonitorApp: App {
+struct UglaApp: App {
     @StateObject private var state = AppState.bootstrap()
     @StateObject private var playback = Playback()
 
@@ -74,7 +74,7 @@ struct ConfiguredView: View {
 
     private var cameraListView: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Baby Monitor").font(.headline)
+            Text("Ugla").font(.headline)
             if state.cameras.isEmpty {
                 Text("No cameras found.").foregroundStyle(.secondary)
             } else {
