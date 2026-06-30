@@ -13,6 +13,8 @@ final class PlayerController: NSObject, AVPictureInPictureControllerDelegate {
     private var statusObservation: NSKeyValueObservation?
     private var possibleObservation: NSKeyValueObservation?
     private var startWhenPossible = false
+    /// Notified (on main) when PiP starts/stops so the UI can track it.
+    var onPiPActiveChange: ((Bool) -> Void)?
 
     override init() {
         super.init()
@@ -60,10 +62,16 @@ final class PlayerController: NSObject, AVPictureInPictureControllerDelegate {
 
     var isPiPActive: Bool { pip?.isPictureInPictureActive ?? false }
 
-    func stop() {
+    /// Exit PiP but keep playing (returns to inline preview).
+    func endPiP() {
         if pip?.isPictureInPictureActive == true { pip?.stopPictureInPicture() }
+    }
+
+    func stop() {
+        // Tear playback down first so nothing keeps playing once PiP closes.
         player.pause()
         player.replaceCurrentItem(with: nil)
+        if pip?.isPictureInPictureActive == true { pip?.stopPictureInPicture() }
         startWhenPossible = false
     }
 
@@ -100,6 +108,20 @@ final class PlayerController: NSObject, AVPictureInPictureControllerDelegate {
             }
         }
         pip = controller
+    }
+
+    nonisolated func pictureInPictureControllerDidStartPictureInPicture(_ c: AVPictureInPictureController) {
+        DispatchQueue.main.async { self.onPiPActiveChange?(true) }
+    }
+
+    nonisolated func pictureInPictureControllerDidStopPictureInPicture(_ c: AVPictureInPictureController) {
+        DispatchQueue.main.async { self.onPiPActiveChange?(false) }
+    }
+
+    nonisolated func pictureInPictureController(
+        _ controller: AVPictureInPictureController,
+        restoreUserInterfaceForPictureInPictureStopWithCompletionHandler completion: @escaping (Bool) -> Void) {
+        completion(true)  // app UI is the menubar popover; nothing to restore
     }
 
     nonisolated func pictureInPictureController(

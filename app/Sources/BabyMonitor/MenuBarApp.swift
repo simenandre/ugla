@@ -43,7 +43,7 @@ struct ConfiguredView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            if playback.isPiPActive {
+            if playback.isPoppedOut {
                 pipActiveView
             } else if playback.isActive {
                 watchingView
@@ -92,7 +92,8 @@ struct ConfiguredView: View {
                 .frame(width: 252, height: 142)
                 .clipShape(RoundedRectangle(cornerRadius: 8))
             HStack {
-                Button { playback.popOut() } label: { Label("Pop out", systemImage: "pip.enter") }
+                Button { playback.popOut() } label: { Image(systemName: "pip.enter") }
+                    .help("Pop out")
                 Button { playback.toggleMute() } label: {
                     Image(systemName: playback.isMuted ? "speaker.slash.fill" : "speaker.wave.2.fill")
                 }
@@ -110,10 +111,12 @@ struct ConfiguredView: View {
             Text("Close this menu — the feed keeps floating.")
                 .font(.caption).foregroundStyle(.secondary)
             HStack {
+                Button { playback.popIn() } label: { Image(systemName: "pip.exit") }
+                    .help("Pop in")
                 Button { playback.toggleMute() } label: {
-                    Label(playback.isMuted ? "Unmute" : "Mute",
-                          systemImage: playback.isMuted ? "speaker.slash.fill" : "speaker.wave.2.fill")
+                    Image(systemName: playback.isMuted ? "speaker.slash.fill" : "speaker.wave.2.fill")
                 }
+                .help(playback.isMuted ? "Unmute" : "Mute")
                 Spacer()
                 Button("Stop") { playback.stop() }
             }

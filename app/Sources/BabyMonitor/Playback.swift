@@ -16,9 +16,15 @@ final class Playback: ObservableObject {
     @Published private(set) var state: State = .idle
     /// Whether audio is muted. A baby monitor defaults to sound on.
     @Published private(set) var isMuted = false
+    /// Whether the feed is currently floating as Picture-in-Picture.
+    @Published private(set) var isPoppedOut = false
 
     let player = PlayerController()
     private let coordinator = StreamCoordinator()
+
+    init() {
+        player.onPiPActiveChange = { [weak self] active in self?.isPoppedOut = active }
+    }
 
     var activeCamera: Camera? {
         if case .watching(let camera) = state { return camera }
@@ -30,7 +36,6 @@ final class Playback: ObservableObject {
         switch state { case .idle, .failed: return false; default: return true }
     }
 
-    var isPiPActive: Bool { player.isPiPActive }
 
     /// Start watching a real camera (plays inline in the popover).
     func watch(_ camera: Camera) {
@@ -63,6 +68,9 @@ final class Playback: ObservableObject {
     }
 
     func popOut() { player.popOut() }
+
+    /// Return from the floating PiP window to the inline preview.
+    func popIn() { player.endPiP() }
 
     func toggleMute() {
         isMuted.toggle()
