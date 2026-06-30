@@ -59,7 +59,6 @@ struct ConfiguredView: View {
         }
         .padding(14)
         .frame(width: 280)
-        .onDisappear { playback.popoverClosed() }
     }
 
     private var cameraListView: some View {
@@ -91,6 +90,10 @@ struct ConfiguredView: View {
                 .clipShape(RoundedRectangle(cornerRadius: 8))
             HStack {
                 Button { playback.popOut() } label: { Label("Pop out", systemImage: "pip.enter") }
+                Button { playback.toggleMute() } label: {
+                    Image(systemName: playback.isMuted ? "speaker.slash.fill" : "speaker.wave.2.fill")
+                }
+                .help(playback.isMuted ? "Unmute" : "Mute")
                 Spacer()
                 Button("Stop") { playback.stop() }
             }
@@ -103,7 +106,14 @@ struct ConfiguredView: View {
                 .font(.subheadline)
             Text("Close this menu — the feed keeps floating.")
                 .font(.caption).foregroundStyle(.secondary)
-            Button("Stop") { playback.stop() }
+            HStack {
+                Button { playback.toggleMute() } label: {
+                    Label(playback.isMuted ? "Unmute" : "Mute",
+                          systemImage: playback.isMuted ? "speaker.slash.fill" : "speaker.wave.2.fill")
+                }
+                Spacer()
+                Button("Stop") { playback.stop() }
+            }
         }
     }
 

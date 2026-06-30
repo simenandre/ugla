@@ -14,6 +14,8 @@ final class Playback: ObservableObject {
     }
 
     @Published private(set) var state: State = .idle
+    /// Whether audio is muted. A baby monitor defaults to sound on.
+    @Published private(set) var isMuted = false
 
     let player = PlayerController()
     private let coordinator = StreamCoordinator()
@@ -42,6 +44,7 @@ final class Playback: ObservableObject {
             do {
                 let url = try await coordinator.start(session: session, camera: camera)
                 player.play(url: url)
+                player.setMuted(isMuted)
                 state = .watching(camera)
             } catch {
                 state = .failed(message(for: error))
@@ -55,10 +58,16 @@ final class Playback: ObservableObject {
         state = .connecting("Test (Apple)")
         let url = URL(string: "https://devstreaming-cdn.apple.com/videos/streaming/examples/bipbop_4x3/bipbop_4x3_variant.m3u8")!
         player.play(url: url)
+        player.setMuted(isMuted)
         state = .watching(Camera(id: "test", name: "Test (Apple)", category: ""))
     }
 
     func popOut() { player.popOut() }
+
+    func toggleMute() {
+        isMuted.toggle()
+        player.setMuted(isMuted)
+    }
 
     func stop() {
         player.stop()
@@ -66,11 +75,9 @@ final class Playback: ObservableObject {
         state = .idle
     }
 
-    /// Called when the popover closes: keep PiP running, otherwise tear down.
-    func popoverClosed() {
-        guard isActive else { return }
-        if !isPiPActive { stop() }
-    }
+    // The stream intentionally keeps running when the popover closes (a baby
+    // monitor should keep monitoring — audio continues, and reopening the menu
+    // resumes the inline video). Use Stop to tear it down.
 
     private func message(for error: Error) -> String {
         if case HelperLocator.LocatorError.notFound(let helper) = error {

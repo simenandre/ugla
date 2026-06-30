@@ -39,10 +39,11 @@ final class PlayerController: NSObject, AVPictureInPictureControllerDelegate {
         let item = AVPlayerItem(url: url)
         observe(item)
         player.replaceCurrentItem(with: item)
-        player.isMuted = false
         player.play()
         ensurePiPController()
     }
+
+    func setMuted(_ muted: Bool) { player.isMuted = muted }
 
     /// Start PiP in response to the user clicking "Pop out".
     func popOut() {
