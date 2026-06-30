@@ -25,6 +25,10 @@ public final class BridgeProcess {
         process.arguments = Self.arguments(session: session, camera: camera, port: rtspPort)
         process.standardOutput = output
         process.standardError = output
+        // The bridge creates its `.tuya-data` storage relative to the working
+        // directory. A GUI app launched via `open` runs with cwd "/", which is
+        // not writable, so point it at a writable Application Support dir.
+        process.currentDirectoryURL = Self.workingDirectory()
 
         let lock = NSLock()
         var done = false
@@ -57,6 +61,17 @@ public final class BridgeProcess {
     }
 
     public var isRunning: Bool { process.isRunning }
+
+    /// A writable directory for the bridge to keep its storage in.
+    static func workingDirectory() -> URL {
+        let fm = FileManager.default
+        let base = (try? fm.url(for: .applicationSupportDirectory, in: .userDomainMask,
+                                appropriateFor: nil, create: true))
+            ?? fm.temporaryDirectory
+        let dir = base.appendingPathComponent("BabyMonitor/bridge", isDirectory: true)
+        try? fm.createDirectory(at: dir, withIntermediateDirectories: true)
+        return dir
+    }
 
     static func arguments(session: Session, camera: Camera, port: Int) -> [String] {
         [
