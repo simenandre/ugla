@@ -24,14 +24,13 @@ final class PlayerController: NSObject, AVPictureInPictureControllerDelegate {
     }
 
     /// Host the shared player layer inside `container` (the inline popover view).
+    /// The container (a ZoomablePlayerView) owns the layer's frame/zoom.
     func attach(to container: NSView) {
         container.wantsLayer = true
         if playerLayer.superlayer !== container.layer {
             playerLayer.removeFromSuperlayer()
             container.layer?.addSublayer(playerLayer)
         }
-        playerLayer.frame = container.bounds
-        playerLayer.autoresizingMask = [.layerWidthSizable, .layerHeightSizable]
         ensurePiPController()
     }
 
