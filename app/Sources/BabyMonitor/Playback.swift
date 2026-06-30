@@ -24,6 +24,8 @@ final class Playback: ObservableObject {
     private let test = TestStream()
 
     init() {
+        // Process lifecycle (kill stale/own helpers at launch/quit) is handled
+        // by AppDelegate, which runs reliably regardless of UI state.
         player.onPiPActiveChange = { [weak self] active in
             guard let self else { return }
             self.isPoppedOut = active

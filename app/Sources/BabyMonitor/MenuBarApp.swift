@@ -8,6 +8,16 @@ struct BabyMonitorApp: App {
     @StateObject private var state = AppState.bootstrap()
     @StateObject private var playback = Playback()
 
+    init() {
+        // App.init runs reliably at launch (unlike a lazy @StateObject or, here,
+        // the NSApplicationDelegate hook). Clear any helper leftovers from a
+        // crash, and ensure none are orphaned when we quit.
+        HelperProcesses.killAll()
+        NotificationCenter.default.addObserver(
+            forName: NSApplication.willTerminateNotification, object: nil, queue: .main
+        ) { _ in HelperProcesses.killAll() }
+    }
+
     var body: some Scene {
         MenuBarExtra {
             PopoverView()
