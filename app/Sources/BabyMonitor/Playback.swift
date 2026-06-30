@@ -79,10 +79,37 @@ final class Playback: ObservableObject {
         }
     }
 
-    func popOut() { player.popOut() }
+    /// Pop out to PiP. If zoomed, bake the current zoom into the stream first so
+    /// the (system-rendered) PiP window shows the zoomed view.
+    func popOut() {
+        guard let crop = player.currentCrop() else { player.popOut(); return }
+        Task {
+            do {
+                let url = try await coordinator.applyCrop(crop)
+                player.play(url: url)
+                player.setMuted(isMuted)
+                player.resetInlineZoom()   // stream is now pre-cropped
+            } catch {
+                Diag.log("popOut: applyCrop failed \(error)")
+            }
+            player.popOut()
+        }
+    }
 
-    /// Return from the floating PiP window to the inline preview.
-    func popIn() { player.endPiP() }
+    /// Return from PiP to the inline preview, restoring the full (uncropped)
+    /// stream so smooth inline zoom is available again.
+    func popIn() {
+        player.endPiP()
+        Task {
+            do {
+                let url = try await coordinator.applyCrop(nil)
+                player.play(url: url)
+                player.setMuted(isMuted)
+            } catch {
+                Diag.log("popIn: applyCrop failed \(error)")
+            }
+        }
+    }
 
     func toggleMute() {
         isMuted.toggle()

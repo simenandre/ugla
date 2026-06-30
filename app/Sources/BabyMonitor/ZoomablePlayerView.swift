@@ -1,5 +1,6 @@
 import AppKit
 import AVKit
+import BabyMonitorCore
 
 /// Hosts the shared `AVPlayerLayer` and adds digital zoom: scroll or pinch to
 /// zoom, drag to pan, double-click to reset. Zoom scales the layer within the
@@ -84,6 +85,24 @@ final class ZoomablePlayerView: NSView {
 
     override func mouseUp(with event: NSEvent) {
         dragOrigin = nil
-        if event.clickCount == 2 { zoom = 1; pan = .zero; relayout() }  // reset
+        if event.clickCount == 2 { resetZoom() }  // double-click resets
+    }
+
+    func resetZoom() {
+        zoom = 1
+        pan = .zero
+        relayout()
+    }
+
+    /// The current zoom as a stream crop region (nil when not zoomed). `px`/`py`
+    /// are the normalized pan position so the same view can be baked into ffmpeg.
+    func currentCrop() -> CropRegion? {
+        guard zoom > 1.01 else { return nil }
+        let maxX = bounds.width * (zoom - 1) / 2
+        let maxY = bounds.height * (zoom - 1) / 2
+        let px = maxX > 0 ? (0.5 - pan.x / (2 * maxX)) : 0.5
+        // AppKit y is bottom-up; video crop y is top-down, hence the +.
+        let py = maxY > 0 ? (0.5 + pan.y / (2 * maxY)) : 0.5
+        return CropRegion(zoom: Double(zoom), px: Double(px), py: Double(py))
     }
 }

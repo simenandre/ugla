@@ -13,6 +13,22 @@ public struct Camera: Identifiable, Equatable, Codable {
     }
 }
 
+/// A zoom region for the stream, used to bake digital zoom into the transcoded
+/// video so it carries into the (system-rendered) PiP window. `px`/`py` are the
+/// normalized pan position of the crop window (0…1; 0.5 = centered).
+public struct CropRegion: Equatable {
+    public let zoom: Double
+    public let px: Double
+    public let py: Double
+
+    public init(zoom: Double, px: Double, py: Double) {
+        precondition(zoom >= 1, "zoom must be >= 1")
+        self.zoom = zoom
+        self.px = min(1, max(0, px))
+        self.py = min(1, max(0, py))
+    }
+}
+
 /// User-entered login inputs. Held only transiently during setup; never stored.
 public struct Credentials: Equatable {
     public let email: String

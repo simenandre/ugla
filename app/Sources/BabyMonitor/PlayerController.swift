@@ -1,6 +1,7 @@
 import AppKit
 import AVFoundation
 import AVKit
+import BabyMonitorCore
 
 /// Plays an HLS URL into an `AVPlayerLayer` that is hosted inline (in the
 /// popover) and can pop out into a native Picture-in-Picture window. Hosting the
@@ -15,6 +16,8 @@ final class PlayerController: NSObject, AVPictureInPictureControllerDelegate {
     private var startWhenPossible = false
     /// Notified (on main) when PiP starts/stops so the UI can track it.
     var onPiPActiveChange: ((Bool) -> Void)?
+    /// The zoom view currently hosting the layer (for reading/resetting zoom).
+    private weak var zoomView: ZoomablePlayerView?
 
     override init() {
         super.init()
@@ -31,8 +34,15 @@ final class PlayerController: NSObject, AVPictureInPictureControllerDelegate {
             playerLayer.removeFromSuperlayer()
             container.layer?.addSublayer(playerLayer)
         }
+        zoomView = container as? ZoomablePlayerView
         ensurePiPController()
     }
+
+    /// The current inline zoom expressed as a stream crop region (nil if 1x).
+    func currentCrop() -> CropRegion? { zoomView?.currentCrop() }
+
+    /// Reset the inline zoom to fit (used after baking zoom into the stream).
+    func resetInlineZoom() { zoomView?.resetZoom() }
 
     func play(url: URL) {
         precondition(url.scheme?.hasPrefix("http") == true, "expected an http HLS URL")
