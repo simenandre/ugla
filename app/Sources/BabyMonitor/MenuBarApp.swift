@@ -43,9 +43,7 @@ struct ConfiguredView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            if playback.isPoppedOut {
-                pipActiveView
-            } else if playback.isActive {
+            if playback.isActive {
                 watchingView
             } else {
                 cameraListView
@@ -86,33 +84,28 @@ struct ConfiguredView: View {
         }
     }
 
+    // The inline player stays mounted the whole time a feed is active, so PiP
+    // always has a layer to return to (pop in/out toggles smoothly).
     private var watchingView: some View {
         VStack(alignment: .leading, spacing: 8) {
             InlinePlayerView(player: playback.player)
                 .frame(width: 252, height: 142)
                 .clipShape(RoundedRectangle(cornerRadius: 8))
-            HStack {
-                Button { playback.popOut() } label: { Image(systemName: "pip.enter") }
-                    .help("Pop out")
-                Button { playback.toggleMute() } label: {
-                    Image(systemName: playback.isMuted ? "speaker.slash.fill" : "speaker.wave.2.fill")
+                .overlay(alignment: .center) {
+                    if playback.isPoppedOut {
+                        Label("Floating", systemImage: "pip")
+                            .font(.caption).padding(6)
+                            .background(.black.opacity(0.5), in: Capsule())
+                    }
                 }
-                .help(playback.isMuted ? "Unmute" : "Mute")
-                Spacer()
-                Button("Stop") { playback.stop() }
-            }
-        }
-    }
-
-    private var pipActiveView: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Label("Playing in Picture-in-Picture", systemImage: "pip")
-                .font(.subheadline)
-            Text("Close this menu — the feed keeps floating.")
-                .font(.caption).foregroundStyle(.secondary)
             HStack {
-                Button { playback.popIn() } label: { Image(systemName: "pip.exit") }
-                    .help("Pop in")
+                if playback.isPoppedOut {
+                    Button { playback.popIn() } label: { Image(systemName: "pip.exit") }
+                        .help("Pop in")
+                } else {
+                    Button { playback.popOut() } label: { Image(systemName: "pip.enter") }
+                        .help("Pop out")
+                }
                 Button { playback.toggleMute() } label: {
                     Image(systemName: playback.isMuted ? "speaker.slash.fill" : "speaker.wave.2.fill")
                 }
