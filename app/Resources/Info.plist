@@ -7,7 +7,7 @@
 	<key>CFBundleDisplayName</key>
 	<string>Baby Monitor</string>
 	<key>CFBundleIdentifier</key>
-	<string>io.sokkel.babymonitor</string>
+	<string>com.simenandre.babymonitor</string>
 	<key>CFBundleExecutable</key>
 	<string>BabyMonitor</string>
 	<key>CFBundlePackageType</key>

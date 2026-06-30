@@ -6,7 +6,7 @@ import Security
 /// live here — never the password. The device id is generated once and reused
 /// across re-auth so the account keeps seeing the same "phone".
 public enum SessionStore {
-    public static let service = "io.sokkel.babymonitor"
+    public static let service = "com.simenandre.babymonitor"
     public static let account = "session"
 
     public enum StoreError: Error { case keychain(OSStatus), encoding }
