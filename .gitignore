@@ -9,3 +9,9 @@ dist/
 
 # Bridge build output (if built in-tree)
 bridge/avent-webrtc-bridge
+
+# Code-signing artifacts (never commit)
+*.cer
+*.p12
+*.certSigningRequest
+*.key
