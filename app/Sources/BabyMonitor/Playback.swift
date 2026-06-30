@@ -21,6 +21,7 @@ final class Playback: ObservableObject {
 
     let player = PlayerController()
     private let coordinator = StreamCoordinator()
+    private let test = TestStream()
 
     init() {
         player.onPiPActiveChange = { [weak self] active in self?.isPoppedOut = active }
@@ -61,14 +62,21 @@ final class Playback: ObservableObject {
         }
     }
 
-    /// Dev: play a known-good reference HLS to validate inline playback + PiP.
+    /// Dev: play an offline synthetic stream (our own ffmpeg HLS) to validate
+    /// the full local pipeline + PiP without a camera.
     func watchTestPattern() {
         stop()
-        state = .connecting("Test (Apple)")
-        let url = URL(string: "https://devstreaming-cdn.apple.com/videos/streaming/examples/bipbop_4x3/bipbop_4x3_variant.m3u8")!
-        player.play(url: url)
-        player.setMuted(isMuted)
-        state = .watching(Camera(id: "test", name: "Test (Apple)", category: ""))
+        state = .connecting("Test pattern")
+        Task {
+            do {
+                let url = try await test.start()
+                player.play(url: url)
+                player.setMuted(isMuted)
+                state = .watching(Camera(id: "test", name: "Test pattern", category: ""))
+            } catch {
+                state = .failed(message(for: error))
+            }
+        }
     }
 
     func popOut() { player.popOut() }
@@ -84,6 +92,7 @@ final class Playback: ObservableObject {
     func stop() {
         player.stop()
         coordinator.stop()
+        test.stop()
         state = .idle
     }
 

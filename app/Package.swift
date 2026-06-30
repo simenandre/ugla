@@ -34,5 +34,12 @@ let package = Package(
             dependencies: ["BabyMonitorCore"],
             path: "Sources/StreamProbe"
         ),
+        // Dev-only: runs ffmpeg with given HLS flags and validates the output
+        // with a real AVPlayer (AVPlayer is the strictest HLS client). Not shipped.
+        .executableTarget(
+            name: "HLSCheck",
+            dependencies: ["BabyMonitorCore"],
+            path: "Sources/HLSCheck"
+        ),
     ]
 )

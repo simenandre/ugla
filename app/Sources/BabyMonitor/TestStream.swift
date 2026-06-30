@@ -51,7 +51,7 @@ final class TestStream {
             "-c:a", "aac", "-b:a", "64k",
             "-f", "hls", "-hls_time", "1", "-hls_list_size", "6",
             "-hls_segment_type", "mpegts",
-            "-hls_flags", "delete_segments+append_list+omit_endlist",
+            "-hls_flags", "delete_segments+independent_segments+omit_endlist",
             "-hls_segment_filename", directory.appendingPathComponent("seg_%05d.ts").path,
             directory.appendingPathComponent("stream.m3u8").path,
         ]

@@ -49,7 +49,9 @@ public final class Transcoder {
             "-hls_time", "1",
             "-hls_list_size", "8",
             "-hls_segment_type", "mpegts",
-            "-hls_flags", "delete_segments+append_list+independent_segments+omit_endlist",
+            // NB: no append_list — it makes AVPlayer reject the live playlist
+            // with a spurious "discontinuity value does not match" (-12312).
+            "-hls_flags", "delete_segments+independent_segments+omit_endlist",
             "-hls_segment_filename", segments,
             playlist,
         ]
