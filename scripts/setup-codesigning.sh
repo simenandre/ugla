@@ -4,11 +4,10 @@
 # and sets the GitHub Actions secrets used by .github/workflows/release.yml.
 # Adapted from loggie-macos.
 #
-# After running this, also set the ffmpeg source for CI (see README):
-#   gh variable set FFMPEG_ARM64_URL --repo simenandre/open-philip-babymonitor --body "<url>"
-#   gh variable set FFMPEG_X86_URL   --repo simenandre/open-philip-babymonitor --body "<url>"
-#   gh secret   set FFMPEG_ARM64_SHA256 ...   # sha256 of the arm64 ffmpeg
-#   gh secret   set FFMPEG_X86_SHA256   ...   # sha256 of the x86_64 ffmpeg
+# ffmpeg is fetched by CI from this repo's pinned `vendor-ffmpeg` release (see
+# README). Create it once with your trusted static ffmpeg binaries:
+#   gh release create vendor-ffmpeg --repo simenandre/open-philip-babymonitor \
+#     --title "Vendored ffmpeg (static)" --latest=false ffmpeg-arm64 ffmpeg-amd64
 set -euo pipefail
 
 REPO="simenandre/open-philip-babymonitor"
@@ -60,5 +59,5 @@ printf '%s' "$TEAM_ID"      | gh secret set APPLE_TEAM_ID --repo "$REPO"
 rm -f "$CSR_FILE" "$P12_FILE"
 
 echo
-echo "Done. Next: set the FFMPEG_* repo variables/secrets (see top of this script),"
+echo "Done. Next: create the vendor-ffmpeg release (see top of this script),"
 echo "then push a tag:  git tag v1.0.0 && git push --tags"

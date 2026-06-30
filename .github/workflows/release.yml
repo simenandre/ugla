@@ -28,23 +28,18 @@ jobs:
           CGO_ENABLED=0 GOARCH=amd64 go build -o /tmp/bridge.amd64 .
           lipo -create -output /tmp/avent-webrtc-bridge /tmp/bridge.arm64 /tmp/bridge.amd64
 
-      # Provide a self-contained, universal static ffmpeg. The source is YOURS to
-      # choose and trust — set repo variables FFMPEG_ARM64_URL / FFMPEG_X86_URL
-      # and the matching FFMPEG_ARM64_SHA256 / FFMPEG_X86_SHA256 secrets.
+      # Self-contained static ffmpeg, hosted on this repo's pinned `vendor-ffmpeg`
+      # release and verified by checksum, then combined into a universal binary.
       - name: Fetch & verify ffmpeg
         env:
-          ARM_URL: ${{ vars.FFMPEG_ARM64_URL }}
-          X86_URL: ${{ vars.FFMPEG_X86_URL }}
-          ARM_SHA: ${{ secrets.FFMPEG_ARM64_SHA256 }}
-          X86_SHA: ${{ secrets.FFMPEG_X86_SHA256 }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          fetch() { curl -fsSL "$1" -o "$2"; case "$2" in *.zip) ditto -x -k "$2" "$(dirname "$2")"; esac; }
-          fetch "$ARM_URL" /tmp/ff_arm.bin; [ -f /tmp/ffmpeg ] && mv /tmp/ffmpeg /tmp/ff_arm || mv /tmp/ff_arm.bin /tmp/ff_arm
-          echo "$ARM_SHA  /tmp/ff_arm" | shasum -a 256 -c -
-          fetch "$X86_URL" /tmp/ff_x86.bin; [ -f /tmp/ffmpeg ] && mv /tmp/ffmpeg /tmp/ff_x86 || mv /tmp/ff_x86.bin /tmp/ff_x86
-          echo "$X86_SHA  /tmp/ff_x86" | shasum -a 256 -c -
-          chmod +x /tmp/ff_arm /tmp/ff_x86
-          lipo -create -output /tmp/ffmpeg /tmp/ff_arm /tmp/ff_x86
+          gh release download vendor-ffmpeg --repo "$GITHUB_REPOSITORY" \
+            -p ffmpeg-arm64 -p ffmpeg-amd64 -D /tmp/ff
+          echo "ef4fe121377039053b0d7bed4a9aa46e7912918f5ba6424a1dd155f4eed625b0  /tmp/ff/ffmpeg-arm64" | shasum -a 256 -c -
+          echo "6a2c2884161d883fbb1ef21a0223475283eb4e381ee870956719f59f32daf74c  /tmp/ff/ffmpeg-amd64" | shasum -a 256 -c -
+          chmod +x /tmp/ff/ffmpeg-arm64 /tmp/ff/ffmpeg-amd64
+          lipo -create -output /tmp/ffmpeg /tmp/ff/ffmpeg-arm64 /tmp/ff/ffmpeg-amd64
 
       - name: Assemble app bundle
         run: |

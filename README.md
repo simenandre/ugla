@@ -55,10 +55,12 @@ self-contained **static** ffmpeg (the dev ffmpeg is dynamically linked and won't
 run on other Macs).
 
 1. One-time signing setup: `scripts/setup-codesigning.sh` (creates the
-   Developer ID cert and sets the GitHub Actions secrets), then set the
-   `FFMPEG_ARM64_URL` / `FFMPEG_X86_URL` repo variables and matching
-   `FFMPEG_*_SHA256` secrets to a static ffmpeg you trust.
-2. `git tag v1.0.0 && git push --tags` → CI builds a **universal**, signed,
+   Developer ID cert and sets the GitHub Actions secrets).
+2. One-time ffmpeg: download a static arm64 + x86_64 ffmpeg you trust and
+   publish them as a pinned `vendor-ffmpeg` release on this repo (CI fetches
+   them, checksum-verified, and lipos a universal binary):
+   `gh release create vendor-ffmpeg --latest=false ffmpeg-arm64 ffmpeg-amd64`
+3. `git tag v1.0.0 && git push --tags` → CI builds a **universal**, signed,
    notarized, stapled DMG and attaches it to a GitHub release.
 
 For a local Apple-Silicon build instead of CI:
