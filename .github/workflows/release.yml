@@ -28,18 +28,19 @@ jobs:
           CGO_ENABLED=0 GOARCH=amd64 go build -o /tmp/bridge.amd64 .
           lipo -create -output /tmp/avent-webrtc-bridge /tmp/bridge.arm64 /tmp/bridge.amd64
 
-      # Self-contained static ffmpeg, hosted on this repo's pinned `vendor-ffmpeg`
-      # release and verified by checksum, then combined into a universal binary.
+      # Self-contained static ffmpeg from ffmpeg.martin-riedl.de (signed/notarized
+      # upstream), pinned by checksum, then combined into a universal binary.
       - name: Fetch & verify ffmpeg
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release download vendor-ffmpeg --repo "$GITHUB_REPOSITORY" \
-            -p ffmpeg-arm64 -p ffmpeg-amd64 -D /tmp/ff
-          echo "ef4fe121377039053b0d7bed4a9aa46e7912918f5ba6424a1dd155f4eed625b0  /tmp/ff/ffmpeg-arm64" | shasum -a 256 -c -
-          echo "6a2c2884161d883fbb1ef21a0223475283eb4e381ee870956719f59f32daf74c  /tmp/ff/ffmpeg-amd64" | shasum -a 256 -c -
-          chmod +x /tmp/ff/ffmpeg-arm64 /tmp/ff/ffmpeg-amd64
-          lipo -create -output /tmp/ffmpeg /tmp/ff/ffmpeg-arm64 /tmp/ff/ffmpeg-amd64
+          base=https://ffmpeg.martin-riedl.de/redirect/latest/macos
+          curl -fsSL -o /tmp/ff_arm.zip "$base/arm64/release/ffmpeg.zip"
+          curl -fsSL -o /tmp/ff_x86.zip "$base/amd64/release/ffmpeg.zip"
+          ditto -x -k /tmp/ff_arm.zip /tmp/ff_arm
+          ditto -x -k /tmp/ff_x86.zip /tmp/ff_x86
+          echo "ef4fe121377039053b0d7bed4a9aa46e7912918f5ba6424a1dd155f4eed625b0  /tmp/ff_arm/ffmpeg" | shasum -a 256 -c -
+          echo "6a2c2884161d883fbb1ef21a0223475283eb4e381ee870956719f59f32daf74c  /tmp/ff_x86/ffmpeg" | shasum -a 256 -c -
+          chmod +x /tmp/ff_arm/ffmpeg /tmp/ff_x86/ffmpeg
+          lipo -create -output /tmp/ffmpeg /tmp/ff_arm/ffmpeg /tmp/ff_x86/ffmpeg
 
       - name: Assemble app bundle
         run: |

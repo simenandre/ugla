@@ -8,7 +8,7 @@ public final class LocalHTTPServer {
     public enum ServerError: Error { case failedToStart }
 
     private let directory: URL
-    private let queue = DispatchQueue(label: "com.simenandre.babymonitor.http")
+    private let queue = DispatchQueue(label: "com.simenandre.ugla.http")
     private var listener: NWListener?
     public private(set) var port: UInt16 = 0
 

@@ -4,10 +4,8 @@
 # and sets the GitHub Actions secrets used by .github/workflows/release.yml.
 # Adapted from loggie-macos.
 #
-# ffmpeg is fetched by CI from this repo's pinned `vendor-ffmpeg` release (see
-# README). Create it once with your trusted static ffmpeg binaries:
-#   gh release create vendor-ffmpeg --repo simenandre/ugla \
-#     --title "Vendored ffmpeg (static)" --latest=false ffmpeg-arm64 ffmpeg-amd64
+# ffmpeg is fetched directly by CI from ffmpeg.martin-riedl.de (pinned by
+# checksum in .github/workflows/release.yml) — nothing extra to set up here.
 set -euo pipefail
 
 REPO="simenandre/ugla"
@@ -63,5 +61,4 @@ printf '%s' "$TEAM_ID"      | gh secret set APPLE_TEAM_ID --repo "$REPO"
 rm -f "$CSR_FILE" "$P12_FILE"
 
 echo
-echo "Done. Next: create the vendor-ffmpeg release (see top of this script),"
-echo "then push a tag:  git tag v1.0.0 && git push --tags"
+echo "Done. Next: push a tag to build a release:  git tag v1.0.0 && git push --tags"
