@@ -47,7 +47,11 @@ public final class LocalHTTPServer {
         conn.receive(minimumIncompleteLength: 1, maximumLength: 64 * 1024) { [weak self] data, _, _, error in
             guard let self, let data, error == nil else { conn.cancel(); return }
             let response = self.response(for: data)
-            conn.send(content: response, completion: .contentProcessed { _ in conn.cancel() })
+            // Send as the final message (isComplete) so the framework flushes the
+            // whole body and sends FIN before we tear down — cancelling earlier
+            // truncates large segments and breaks playback.
+            conn.send(content: response, contentContext: .finalMessage, isComplete: true,
+                      completion: .contentProcessed { _ in conn.cancel() })
         }
     }
 

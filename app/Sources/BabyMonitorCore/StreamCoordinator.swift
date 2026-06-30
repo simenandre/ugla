@@ -4,6 +4,8 @@ import Foundation
 /// local HTTP. `start` returns the HLS URL for AVPlayer; `stop` tears the whole
 /// chain down and deletes the temp directory. Single-purpose parts, composed.
 public final class StreamCoordinator {
+    public enum StreamError: Error { case playlistTimedOut }
+
     private let rtspPort: Int
     private var bridge: BridgeProcess?
     private var transcoder: Transcoder?
@@ -35,6 +37,13 @@ public final class StreamCoordinator {
         let transcoder = Transcoder(executable: ffmpegExe, directory: dir)
         self.transcoder = transcoder
         try transcoder.start(rtsp: rtsp)
+
+        // Wait for ffmpeg to produce a playable playlist before handing it to
+        // AVPlayer (a 404 manifest is a permanent failure there).
+        guard await HLS.waitForPlaylist(at: transcoder.playlistURL, timeout: 25) else {
+            stop()
+            throw StreamError.playlistTimedOut
+        }
 
         let server = LocalHTTPServer(directory: dir)
         self.server = server

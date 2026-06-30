@@ -48,12 +48,16 @@ final class Playback: ObservableObject {
     func watchTestPattern() {
         stop()
         state = .connecting("Test pattern")
-        do {
-            let url = try test.start()
-            player.play(url: url, autoPiP: true)
-            state = .watching(Camera(id: "test", name: "Test pattern", category: ""))
-        } catch {
-            state = .failed(message(for: error))
+        Task {
+            do {
+                let url = try await test.start()
+                Diag.log("test stream ready at \(url.absoluteString)")
+                player.play(url: url, autoPiP: true)
+                state = .watching(Camera(id: "test", name: "Test pattern", category: ""))
+            } catch {
+                Diag.log("test stream failed: \(error)")
+                state = .failed(message(for: error))
+            }
         }
     }
 

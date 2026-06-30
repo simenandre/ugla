@@ -4,7 +4,7 @@ import AVKit
 
 /// Plays an HLS URL and presents it as a native macOS Picture-in-Picture window.
 /// macOS PiP requires an `AVPlayerLayer` inside an on-screen window, so we host
-/// the layer in a fully transparent, click-through window — PiP is the only
+/// the layer in a transparent (alpha 0), click-through window — PiP is the only
 /// thing the user actually sees.
 @MainActor
 final class PlayerController: NSObject, AVPictureInPictureControllerDelegate {
@@ -13,6 +13,7 @@ final class PlayerController: NSObject, AVPictureInPictureControllerDelegate {
     private var hostWindow: NSWindow?
     private var pip: AVPictureInPictureController?
     private var possibleObservation: NSKeyValueObservation?
+    private var statusObservation: NSKeyValueObservation?
     private var startWhenPossible = false
 
     override init() {
@@ -24,25 +25,28 @@ final class PlayerController: NSObject, AVPictureInPictureControllerDelegate {
     /// Start playback and (optionally) pop into PiP as soon as it is possible.
     func play(url: URL, autoPiP: Bool) {
         precondition(url.scheme?.hasPrefix("http") == true, "expected an http HLS URL")
+        Diag.log("play url=\(url.absoluteString) autoPiP=\(autoPiP)")
         ensureHostWindow()
-        player.replaceCurrentItem(with: AVPlayerItem(url: url))
+        let item = AVPlayerItem(url: url)
+        observe(item)
+        player.replaceCurrentItem(with: item)
         player.isMuted = false
         player.play()
         startWhenPossible = autoPiP
         ensurePiPController()
-        assert(pip != nil || !AVPictureInPictureController.isPictureInPictureSupported(),
-               "PiP controller should exist where supported")
     }
 
     /// Toggle PiP in response to a user action.
     func togglePiP() {
-        guard let pip else { return }
+        guard let pip else { Diag.log("togglePiP: no controller"); return }
         if pip.isPictureInPictureActive {
             pip.stopPictureInPicture()
         } else if pip.isPictureInPicturePossible {
+            Diag.log("togglePiP: starting")
             pip.startPictureInPicture()
         } else {
-            startWhenPossible = true   // start as soon as it becomes possible
+            startWhenPossible = true
+            Diag.log("togglePiP: not yet possible, will start when ready")
         }
     }
 
@@ -52,43 +56,68 @@ final class PlayerController: NSObject, AVPictureInPictureControllerDelegate {
         player.replaceCurrentItem(with: nil)
     }
 
+    private func observe(_ item: AVPlayerItem) {
+        statusObservation = item.observe(\.status, options: [.new]) { item, _ in
+            DispatchQueue.main.async {
+                switch item.status {
+                case .readyToPlay: Diag.log("item readyToPlay")
+                case .failed: Diag.log("item FAILED: \(item.error?.localizedDescription ?? "?")")
+                default: Diag.log("item status=unknown")
+                }
+            }
+        }
+    }
+
     private func ensureHostWindow() {
         guard hostWindow == nil else { return }
         let frame = NSRect(x: 0, y: 0, width: 480, height: 270)
         let window = NSWindow(contentRect: frame, styleMask: [.borderless],
                               backing: .buffered, defer: false)
-        window.alphaValue = 0            // invisible host; never shown to the user
+        window.alphaValue = 0            // invisible host; PiP is the visible surface
         window.ignoresMouseEvents = true
         window.isReleasedWhenClosed = false
+        window.hasShadow = false
         let view = NSView(frame: frame)
         view.wantsLayer = true
         playerLayer.frame = view.bounds
         playerLayer.autoresizingMask = [.layerWidthSizable, .layerHeightSizable]
         view.layer?.addSublayer(playerLayer)
         window.contentView = view
-        window.orderFrontRegardless()    // must be on-screen for PiP to be possible
+        window.orderFrontRegardless()    // on-screen (rendered) so PiP is possible
         hostWindow = window
         assert(hostWindow?.contentView?.layer != nil, "host must be layer-backed")
     }
 
     private func ensurePiPController() {
-        guard pip == nil, AVPictureInPictureController.isPictureInPictureSupported() else { return }
-        guard let controller = AVPictureInPictureController(playerLayer: playerLayer) else { return }
+        let supported = AVPictureInPictureController.isPictureInPictureSupported()
+        Diag.log("PiP supported=\(supported)")
+        guard pip == nil, supported else { return }
+        guard let controller = AVPictureInPictureController(playerLayer: playerLayer) else {
+            Diag.log("failed to create AVPictureInPictureController"); return
+        }
         controller.delegate = self
         possibleObservation = controller.observe(\.isPictureInPicturePossible, options: [.new]) {
-            [weak self] controller, _ in
+            controller, _ in
             DispatchQueue.main.async {
-                guard let self, self.startWhenPossible, controller.isPictureInPicturePossible else { return }
+                Diag.log("isPictureInPicturePossible=\(controller.isPictureInPicturePossible)")
+                guard self.startWhenPossible, controller.isPictureInPicturePossible else { return }
                 self.startWhenPossible = false
+                Diag.log("starting PiP")
                 controller.startPictureInPicture()
             }
         }
         pip = controller
     }
 
+    nonisolated func pictureInPictureControllerWillStartPictureInPicture(_ c: AVPictureInPictureController) {
+        Diag.log("PiP willStart")
+    }
+    nonisolated func pictureInPictureControllerDidStartPictureInPicture(_ c: AVPictureInPictureController) {
+        Diag.log("PiP didStart")
+    }
     nonisolated func pictureInPictureController(
         _ controller: AVPictureInPictureController,
         failedToStartPictureInPictureWithError error: Error) {
-        NSLog("[BabyMonitor] PiP failed to start: \(error.localizedDescription)")
+        Diag.log("PiP FAILED: \(error.localizedDescription)")
     }
 }

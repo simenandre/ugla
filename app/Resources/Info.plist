@@ -20,6 +20,13 @@
 	<string>13.0</string>
 	<key>LSUIElement</key>
 	<true/>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<!-- The HLS stream is served from a loopback HTTP server (127.0.0.1).
+		     Allow cleartext loads to local/loopback hosts only. -->
+		<key>NSAllowsLocalNetworking</key>
+		<true/>
+	</dict>
 	<key>NSHighResolutionCapable</key>
 	<true/>
 	<key>NSHumanReadableCopyright</key>

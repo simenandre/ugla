@@ -10,7 +10,9 @@ final class TestStream {
     private var server: LocalHTTPServer?
     private var directory: URL?
 
-    func start() throws -> URL {
+    enum TestError: Error { case playlistTimedOut }
+
+    func start() async throws -> URL {
         let ffmpeg = try HelperLocator.require(.ffmpeg)
         let dir = FileManager.default.temporaryDirectory
             .appendingPathComponent("babymon-test-\(UUID().uuidString)", isDirectory: true)
@@ -23,6 +25,11 @@ final class TestStream {
         process.standardError = FileHandle.nullDevice
         try process.run()
         assert(process.isRunning, "test ffmpeg should be running")
+
+        let playlist = dir.appendingPathComponent("stream.m3u8")
+        guard await HLS.waitForPlaylist(at: playlist, timeout: 15) else {
+            stop(); throw TestError.playlistTimedOut
+        }
 
         let server = LocalHTTPServer(directory: dir)
         self.server = server
