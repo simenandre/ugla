@@ -44,14 +44,18 @@ final class Playback: ObservableObject {
         state = .connecting(camera.name)
         Task {
             guard let session = SessionStore.load(), session.isValid else {
+                Diag.log("watch(\(camera.name)): no valid session in keychain")
                 state = .failed("Please sign in again"); return
             }
+            Diag.log("watch(\(camera.name)): starting pipeline")
             do {
                 let url = try await coordinator.start(session: session, camera: camera)
+                Diag.log("watch(\(camera.name)): HLS ready at \(url.absoluteString)")
                 player.play(url: url)
                 player.setMuted(isMuted)
                 state = .watching(camera)
             } catch {
+                Diag.log("watch(\(camera.name)): FAILED \(error)")
                 state = .failed(message(for: error))
             }
         }
