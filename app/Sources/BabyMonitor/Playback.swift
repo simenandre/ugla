@@ -24,7 +24,14 @@ final class Playback: ObservableObject {
     private let test = TestStream()
 
     init() {
-        player.onPiPActiveChange = { [weak self] active in self?.isPoppedOut = active }
+        player.onPiPActiveChange = { [weak self] active in
+            guard let self else { return }
+            self.isPoppedOut = active
+            // PiP ended (via our button OR the system close button) while still
+            // streaming → restore the full, uncropped stream so we aren't stuck
+            // at the baked-in zoom.
+            if !active && self.isActive { self.restoreFullStream() }
+        }
     }
 
     var activeCamera: Camera? {
@@ -96,18 +103,22 @@ final class Playback: ObservableObject {
         }
     }
 
-    /// Return from PiP to the inline preview, restoring the full (uncropped)
-    /// stream so smooth inline zoom is available again.
-    func popIn() {
-        player.endPiP()
+    /// Return from PiP to the inline preview. Stopping PiP triggers
+    /// `restoreFullStream()` via the PiP-state handler.
+    func popIn() { player.endPiP() }
+
+    /// Restore the full (uncropped) stream and reset inline zoom. Runs whenever
+    /// PiP ends while still streaming.
+    private func restoreFullStream() {
         Task {
             do {
                 let url = try await coordinator.applyCrop(nil)
                 player.play(url: url)
                 player.setMuted(isMuted)
             } catch {
-                Diag.log("popIn: applyCrop failed \(error)")
+                Diag.log("restoreFullStream: \(error)")  // e.g. test pattern has no coordinator
             }
+            player.resetInlineZoom()
         }
     }
 
@@ -117,10 +128,12 @@ final class Playback: ObservableObject {
     }
 
     func stop() {
+        // Set idle first so the PiP-stop handler sees we are no longer active
+        // and does not try to restore the stream during teardown.
+        state = .idle
         player.stop()
         coordinator.stop()
         test.stop()
-        state = .idle
     }
 
     // The stream intentionally keeps running when the popover closes (a baby
