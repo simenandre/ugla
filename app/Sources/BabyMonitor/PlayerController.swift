@@ -61,7 +61,12 @@ final class PlayerController: NSObject, AVPictureInPictureControllerDelegate {
             DispatchQueue.main.async {
                 switch item.status {
                 case .readyToPlay: Diag.log("item readyToPlay")
-                case .failed: Diag.log("item FAILED: \(item.error?.localizedDescription ?? "?")")
+                case .failed:
+                    let ns = item.error as NSError?
+                    Diag.log("item FAILED: \(ns?.domain ?? "?") \(ns?.code ?? 0) underlying=\((ns?.userInfo[NSUnderlyingErrorKey] as? NSError)?.description ?? "none")")
+                    for event in item.errorLog()?.events ?? [] {
+                        Diag.log("  errlog status=\(event.errorStatusCode) uri=\(event.uri ?? "?") comment=\(event.errorComment ?? "?")")
+                    }
                 default: Diag.log("item status=unknown")
                 }
             }

@@ -44,21 +44,15 @@ final class Playback: ObservableObject {
         }
     }
 
-    /// Dev: play a synthetic stream to exercise the player + PiP offline.
+    /// Dev: play a known-good reference HLS stream to validate the player + PiP
+    /// path independently of our ffmpeg muxing.
     func watchTestPattern() {
         stop()
         state = .connecting("Test pattern")
-        Task {
-            do {
-                let url = try await test.start()
-                Diag.log("test stream ready at \(url.absoluteString)")
-                player.play(url: url, autoPiP: true)
-                state = .watching(Camera(id: "test", name: "Test pattern", category: ""))
-            } catch {
-                Diag.log("test stream failed: \(error)")
-                state = .failed(message(for: error))
-            }
-        }
+        let url = URL(string: "https://devstreaming-cdn.apple.com/videos/streaming/examples/bipbop_4x3/bipbop_4x3_variant.m3u8")!
+        Diag.log("playing reference stream \(url.absoluteString)")
+        player.play(url: url, autoPiP: true)
+        state = .watching(Camera(id: "test", name: "Test (Apple)", category: ""))
     }
 
     func popOut() { player.togglePiP() }
