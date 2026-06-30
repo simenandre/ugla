@@ -23,6 +23,16 @@ cp "$BIN" "$OUT/Contents/MacOS/BabyMonitor"
 cp "$APPDIR/Resources/Info.plist" "$OUT/Contents/Info.plist"
 printf 'APPL????' > "$OUT/Contents/PkgInfo"
 
+# Bundle the helper binaries (built by scripts/build-helpers.sh).
+if [ -d "$APPDIR/helpers" ]; then
+  for h in avent-webrtc-bridge ffmpeg; do
+    [ -f "$APPDIR/helpers/$h" ] && cp "$APPDIR/helpers/$h" "$OUT/Contents/Resources/Helpers/$h"
+  done
+  echo "Bundled helpers: $(ls "$OUT/Contents/Resources/Helpers" 2>/dev/null | tr '\n' ' ')"
+else
+  echo "warning: app/helpers not found — run scripts/build-helpers.sh first" >&2
+fi
+
 # Ad-hoc sign so it launches locally (Developer ID signing happens in release.sh).
 codesign --force --deep --sign - "$OUT" >/dev/null 2>&1 || \
   echo "warning: ad-hoc codesign failed (app may still run)"

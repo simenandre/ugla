@@ -27,5 +27,12 @@ let package = Package(
             dependencies: ["BabyMonitorCore"],
             path: "Sources/SelfTest"
         ),
+        // Dev-only: runs the full pipeline for the saved session and prints the
+        // HLS URL so it can be probed with ffprobe/ffplay. Not shipped.
+        .executableTarget(
+            name: "StreamProbe",
+            dependencies: ["BabyMonitorCore"],
+            path: "Sources/StreamProbe"
+        ),
     ]
 )
