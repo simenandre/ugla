@@ -6,11 +6,11 @@
 #
 # ffmpeg is fetched by CI from this repo's pinned `vendor-ffmpeg` release (see
 # README). Create it once with your trusted static ffmpeg binaries:
-#   gh release create vendor-ffmpeg --repo simenandre/open-philip-babymonitor \
+#   gh release create vendor-ffmpeg --repo simenandre/ugla \
 #     --title "Vendored ffmpeg (static)" --latest=false ffmpeg-arm64 ffmpeg-amd64
 set -euo pipefail
 
-REPO="simenandre/open-philip-babymonitor"
+REPO="simenandre/ugla"
 CSR_FILE="UglaDeveloperID.certSigningRequest"
 CERT_FILE="developerID_application.cer"
 P12_FILE="DeveloperID.p12"
