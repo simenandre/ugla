@@ -37,8 +37,8 @@ jobs:
           curl -fsSL -o /tmp/ff_x86.zip "$base/amd64/release/ffmpeg.zip"
           ditto -x -k /tmp/ff_arm.zip /tmp/ff_arm
           ditto -x -k /tmp/ff_x86.zip /tmp/ff_x86
-          echo "ef4fe121377039053b0d7bed4a9aa46e7912918f5ba6424a1dd155f4eed625b0  /tmp/ff_arm/ffmpeg" | shasum -a 256 -c -
-          echo "6a2c2884161d883fbb1ef21a0223475283eb4e381ee870956719f59f32daf74c  /tmp/ff_x86/ffmpeg" | shasum -a 256 -c -
+          echo "eaf91238e104dd0e262bc6510e25061855cc99a6955a721b0ac99660d58c473d  /tmp/ff_arm/ffmpeg" | shasum -a 256 -c -
+          echo "1ca59dda73668c59898a0b305afd8a88817a989187f222ec62d64e775d614d23  /tmp/ff_x86/ffmpeg" | shasum -a 256 -c -
           chmod +x /tmp/ff_arm/ffmpeg /tmp/ff_x86/ffmpeg
           lipo -create -output /tmp/ffmpeg /tmp/ff_arm/ffmpeg /tmp/ff_x86/ffmpeg
 
