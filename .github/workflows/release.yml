@@ -49,6 +49,7 @@ jobs:
           mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources/Helpers"
           cp "$(swift build --package-path app -c release --arch arm64 --arch x86_64 --show-bin-path)/Ugla" "$APP/Contents/MacOS/"
           sed "s#0.1.0#$VERSION#" app/Resources/Info.plist > "$APP/Contents/Info.plist"
+          cp app/Resources/AppIcon.icns "$APP/Contents/Resources/AppIcon.icns"
           printf 'APPL????' > "$APP/Contents/PkgInfo"
           cp /tmp/avent-webrtc-bridge /tmp/ffmpeg "$APP/Contents/Resources/Helpers/"
           chmod +x "$APP/Contents/Resources/Helpers/"*

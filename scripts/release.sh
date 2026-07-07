@@ -35,6 +35,7 @@ cp "$BIN" "$APP/Contents/MacOS/Ugla"
 
 echo "==> Info.plist"
 sed "s#0.1.0#$VERSION#" "$APPDIR/Resources/Info.plist" > "$APP/Contents/Info.plist"
+cp "$APPDIR/Resources/AppIcon.icns" "$APP/Contents/Resources/AppIcon.icns"
 printf 'APPL????' > "$APP/Contents/PkgInfo"
 
 echo "==> Helpers (bridge built static; ffmpeg from FFMPEG_STATIC)"

@@ -21,6 +21,7 @@ rm -rf "$OUT"
 mkdir -p "$OUT/Contents/MacOS" "$OUT/Contents/Resources/Helpers"
 cp "$BIN" "$OUT/Contents/MacOS/Ugla"
 cp "$APPDIR/Resources/Info.plist" "$OUT/Contents/Info.plist"
+[ -f "$APPDIR/Resources/AppIcon.icns" ] && cp "$APPDIR/Resources/AppIcon.icns" "$OUT/Contents/Resources/AppIcon.icns"
 printf 'APPL????' > "$OUT/Contents/PkgInfo"
 
 # Bundle the helper binaries (built by scripts/build-helpers.sh).
