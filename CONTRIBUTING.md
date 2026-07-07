@@ -60,10 +60,15 @@ run on other Macs).
 1. **Signing secrets:** `scripts/setup-codesigning.sh` creates the Developer ID
    cert and sets the GitHub Actions secrets (`DEVELOPER_ID_APPLICATION_P12`,
    `APPLE_ID`, `APPLE_TEAM_ID`, …).
-2. **ffmpeg:** CI downloads static arm64 + x86_64 builds directly from
-   `ffmpeg.martin-riedl.de` (signed/notarized upstream), verifies them against
-   the SHA-256s pinned in `release.yml`, and `lipo`s them into a universal
-   binary. If you bump the ffmpeg version, update those two checksums.
+2. **ffmpeg:** static arm64 + x86_64 builds (from `ffmpeg.martin-riedl.de`) are
+   hosted on this repo's pinned `vendor-ffmpeg` release so they can't drift. CI
+   downloads them, verifies the SHA-256s pinned in `release.yml`, and `lipo`s
+   them into a universal binary. To update ffmpeg: clobber that release's assets
+   and update the two checksums:
+
+   ```bash
+   gh release upload vendor-ffmpeg ffmpeg-arm64 ffmpeg-amd64 --clobber
+   ```
 
 ### Local build (Apple Silicon, instead of CI)
 
