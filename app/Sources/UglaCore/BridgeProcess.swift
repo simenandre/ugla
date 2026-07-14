@@ -20,7 +20,7 @@ public final class BridgeProcess {
     public func start(session: Session, camera: Camera, rtspPort: Int,
                       timeout: TimeInterval = 30) async throws -> URL {
         precondition(session.isValid, "valid session required")
-        precondition(!camera.id.isEmpty && rtspPort > 0, "camera + port required")
+        precondition(!camera.id.isEmpty && rtspPort >= 0, "camera + port required")
         process.executableURL = executable
         process.arguments = Self.arguments(session: session, camera: camera, port: rtspPort)
         process.standardOutput = output

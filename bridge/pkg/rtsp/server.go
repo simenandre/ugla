@@ -123,6 +123,12 @@ func (s *RTSPServer) Start() error {
 	}
 
 	s.listener = listener
+	// Reflect the actual bound port so GetPort() and the advertised RTSP URL are
+	// correct when port 0 was requested (ephemeral — the desktop app uses this to
+	// avoid clashing with a stray bridge on a fixed port).
+	if addr, ok := listener.Addr().(*net.TCPAddr); ok {
+		s.port = addr.Port
+	}
 	s.running = true
 
 	if s.MobileClient != nil {

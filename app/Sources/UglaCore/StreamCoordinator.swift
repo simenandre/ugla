@@ -15,8 +15,11 @@ public final class StreamCoordinator {
     private var rtsp: URL?
     private var ffmpegExe: URL?
 
-    public init(rtspPort: Int = 8554) {
-        precondition(rtspPort > 0, "rtsp port required")
+    /// `rtspPort` 0 (the default) asks the bridge for an ephemeral port, so a
+    /// stray bridge left on a fixed port can't hijack our stream. The real port
+    /// is read back from the RTSP URL the bridge advertises.
+    public init(rtspPort: Int = 0) {
+        precondition(rtspPort >= 0, "rtsp port required")
         self.rtspPort = rtspPort
     }
 

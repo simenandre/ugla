@@ -139,6 +139,7 @@ func runDirect(cmd *cobra.Command, args []string) error {
 	if err := server.Start(); err != nil {
 		return fmt.Errorf("failed to start RTSP server: %v", err)
 	}
+	port = server.GetPort() // resolve the real port (ephemeral when 0 was requested)
 
 	core.Logger.Info().Msgf("RTSP endpoints:")
 	core.Logger.Info().Msgf("  HD: rtsp://localhost:%d%s", port, rtspPath)
